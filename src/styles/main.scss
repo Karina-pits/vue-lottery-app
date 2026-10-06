@@ -1,0 +1,305 @@
+// Імпортуємо лише ті частини Bootstrap, які реально потрібні застосунку
+// (базові стилі, кнопки, таблиці, поля форми, тости для повідомлень
+// про помилки, переходи для модального вікна) — а не весь фреймворк.
+
+// Функції, змінні, міксини — потрібні будь-якому іншому імпорту нижче
+@import 'bootstrap/scss/functions';
+@import 'bootstrap/scss/variables';
+@import 'bootstrap/scss/variables-dark';
+@import 'bootstrap/scss/maps';
+@import 'bootstrap/scss/mixins';
+@import 'bootstrap/scss/utilities';
+
+// Базові стилі (reset, типографіка)
+@import 'bootstrap/scss/root';
+@import 'bootstrap/scss/reboot';
+@import 'bootstrap/scss/type';
+
+// Кнопки
+@import 'bootstrap/scss/buttons';
+@import 'bootstrap/scss/transitions';
+
+// Поля форми
+@import 'bootstrap/scss/forms';
+
+// Таблиці
+@import 'bootstrap/scss/tables';
+
+// Модальне вікно
+@import 'bootstrap/scss/close';
+@import 'bootstrap/scss/modal';
+
+// Допоміжні утиліти (spacing, flex, text-утиліти — використовуються в розмітці)
+@import 'bootstrap/scss/utilities/api';
+
+// Bootstrap Icons (sort-alpha-down, sort-down, x тощо)
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+// ---------------------------------------------------------------------
+// Власні стилі застосунку поверх Bootstrap — наближені до дизайну з ЛР
+// ---------------------------------------------------------------------
+
+$app-bg: #f3f4f6;
+$card-border: #e9ecef;
+$text-muted-light: #adb5bd;
+
+body {
+  background-color: $app-bg;
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 800px;
+  margin: 2.5rem auto;
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.card-block {
+  background: #fff;
+  border: 1px solid $card-border;
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+}
+
+// --- Winners block (верхній рядок із тегами переможців) ---
+
+.winners-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fff;
+  border: 1px solid $card-border;
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.winners-bar__input {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  background: #fff;
+}
+
+.winners-bar__placeholder {
+  color: $text-muted-light;
+  font-size: 0.9rem;
+}
+
+.winner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #38a7e0;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 0.2rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.winner-badge__remove {
+  background: none;
+  border: none;
+  color: #fff;
+  line-height: 1;
+  padding: 0;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0.85;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+// --- Register form block ---
+
+.form-block__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.1rem;
+}
+
+.form-block__subtitle {
+  color: #adb5bd;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+}
+
+.form-field {
+  margin-bottom: 1rem;
+}
+
+.form-field__label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.form-field__error {
+  color: #dc3545;
+  font-size: 0.78rem;
+  margin-top: 0.25rem;
+}
+
+.form-block__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+// --- Participants table block ---
+
+.table-block__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.participants-table {
+  width: 100%;
+
+  th {
+    font-size: 0.85rem;
+    color: #495057;
+    border-bottom: 1px solid $card-border;
+    padding-bottom: 0.6rem;
+    font-weight: 700;
+  }
+
+  td {
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid #f1f3f5;
+    font-size: 0.9rem;
+    vertical-align: middle;
+  }
+
+  .col-index {
+    color: #adb5bd;
+    width: 2rem;
+  }
+}
+
+.sort-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.3rem;
+  color: #868e96;
+  cursor: pointer;
+
+  &:hover,
+  &.is-active {
+    color: #212529;
+  }
+}
+
+.table-actions {
+  display: flex;
+  gap: 0.4rem;
+  white-space: nowrap;
+}
+
+// --- Modal (використовуємо bootstrap .modal разом з кастомним backdrop) ---
+
+.modal-backdrop-custom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+
+.modal-dialog-custom {
+  background: #fff;
+  border-radius: 0.3rem;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.2);
+}
+
+.modal-dialog-custom__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $card-border;
+}
+
+.modal-dialog-custom__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.modal-dialog-custom__body {
+  padding: 1.25rem;
+}
+
+.modal-dialog-custom__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid $card-border;
+}
+
+// Перехід появи/зникнення модального вікна (Vue <Transition> + CSS transitions):
+// backdrop затухає, а сам діалог одночасно трохи масштабується й зсувається.
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.2s ease;
+
+  .modal-dialog-custom {
+    transition:
+      opacity 0.2s ease,
+      transform 0.2s ease;
+  }
+}
+
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+
+  .modal-dialog-custom {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+}
+
+// --- Toast-повідомлення про помилку (заміна alert) ---
+
+.toast-error {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1080;
+  background: #dc3545;
+  color: #fff;
+  padding: 0.75rem 1.1rem;
+  border-radius: 0.25rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.25);
+  font-size: 0.9rem;
+}
+
+.toast-fade-enter-active,
+.toast-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+
+.toast-fade-enter-from,
+.toast-fade-leave-to {
+  opacity: 0;
+}
