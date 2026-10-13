@@ -25,6 +25,14 @@
 // Таблиці
 @import 'bootstrap/scss/tables';
 
+// Повідомлення, спінер, пагінація
+@import 'bootstrap/scss/alert';
+@import 'bootstrap/scss/spinners';
+@import 'bootstrap/scss/pagination';
+
+// Сітка для форм (row / col-*)
+@import 'bootstrap/scss/grid';
+
 // Модальне вікно
 @import 'bootstrap/scss/close';
 @import 'bootstrap/scss/modal';
@@ -48,13 +56,145 @@ body {
   min-height: 100vh;
 }
 
-.app {
-  max-width: 800px;
-  margin: 2.5rem auto;
+// --- Layouts ---
+
+.layout-default {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-default__main {
+  flex: 1;
+  width: 100%;
+  max-width: 1100px;
+  margin: 1.5rem auto;
   padding: 0 1rem;
+}
+
+.layout-default__footer {
+  text-align: center;
+  color: #868e96;
+  font-size: 0.8rem;
+  padding: 1rem;
+}
+
+.layout-auth {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+.layout-auth__card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+}
+
+.page-stack {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  margin: 1.25rem 0 0.5rem;
+}
+
+// --- Header / navigation / logo ---
+
+.app-header {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.app-header__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.app-header__user {
+  margin-left: auto;
+  color: #868e96;
+  font-size: 0.85rem;
+}
+
+.app-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #212529;
+  text-decoration: none;
+}
+
+.app-logo__icon {
+  color: #38a7e0;
+}
+
+.app-nav {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: auto;
+
+  .app-header__user + & {
+    margin-left: 0;
+  }
+}
+
+.app-nav__link {
+  background: none;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 0.25rem;
+  color: #495057;
+  text-decoration: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+
+  &:hover {
+    background: #f1f3f5;
+  }
+
+  // Активний пункт меню (клас додає vue-router через active-class)
+  &.is-active {
+    background: #38a7e0;
+    color: #fff;
+  }
+}
+
+.details-list {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.4rem 1rem;
+
+  dt {
+    color: #868e96;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+  }
 }
 
 .card-block {
@@ -156,51 +296,47 @@ body {
 .form-block__actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 
 // --- Participants table block ---
 
 .table-block__toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
+
+  .form-control {
+    max-width: 280px;
+  }
 }
 
-.participants-table {
+.users-table {
   width: 100%;
 
   th {
     font-size: 0.85rem;
     color: #495057;
     border-bottom: 1px solid $card-border;
-    padding-bottom: 0.6rem;
+    padding: 0 1.25rem 0.6rem 0;
     font-weight: 700;
+    white-space: nowrap;
   }
 
   td {
-    padding: 0.6rem 0.5rem;
+    padding: 0.6rem 1.25rem 0.6rem 0;
     border-bottom: 1px solid #f1f3f5;
     font-size: 0.9rem;
     vertical-align: middle;
+    white-space: nowrap;
   }
 
   .col-index {
     color: #adb5bd;
     width: 2rem;
-  }
-}
-
-.sort-toggle {
-  background: none;
-  border: none;
-  padding: 0;
-  margin-left: 0.3rem;
-  color: #868e96;
-  cursor: pointer;
-
-  &:hover,
-  &.is-active {
-    color: #212529;
+    padding-right: 0.75rem;
   }
 }
 
