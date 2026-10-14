@@ -1,311 +1,179 @@
 # vue-lottery-app
 
-Лабораторна робота №4 — застосунок-лотерея на **Vue 3 + TypeScript + Composition API**
-(`<script setup>`), поділений на багаторазові компоненти.
-
-## Технології
-
-- Vue 3 (Composition API, `<script setup lang="ts">`)
-- TypeScript
-- Vite
-- Bootstrap 5 + Bootstrap Icons, підключені через npm, стилізація через SCSS
-  (імпортовано лише потрібні партиали: reboot, type, buttons, forms, tables,
-  modal, close, transitions, utilities)
-- ESLint (`eslint-plugin-vue` + `@typescript-eslint`) + Prettier
-- localStorage для персистентності списку учасників
+Лабораторна робота №5 — **керування маршрутами з vue-router**, патерн **Repository** та
+**JWT-авторизація** (гілка `feature/routing`).
+Стек: Vue 3 (Composition API) + TypeScript, Vue Router, Pinia, VeeValidate + yup,
+Bootstrap 5 (SCSS, лише потрібні партиали), Vite, ESLint + Prettier.
+API: публічний [DummyJSON](https://dummyjson.com) (Users + Auth).
 
 ## Запуск
 
 ```bash
 npm install
-npm run dev        # dev-сервер (Vite)
-npm run build       # типчек (vue-tsc) + production-збірка у dist/
-npm run preview      # перегляд production-збірки
-npm run lint           # ESLint
-npm run lint:fix        # ESLint з автофіксом
-npm run format            # Prettier
+cp .env.example .env     # на Windows: copy .env.example .env
+npm run dev              # dev-сервер
+npm run build            # vue-tsc + збірка у dist/ (+ dist/404.html для GitHub Pages)
+npm run lint             # ESLint
 ```
 
-## Архітектура застосунку
+Тестовий акаунт для входу: **emilys / emilyspass**.
+
+### Змінні оточення (`.env`)
+
+| Змінна           | Призначення                                                    |
+| ---------------- | -------------------------------------------------------------- |
+| `VITE_API_URL`   | базова адреса API (`https://dummyjson.com`)                    |
+| `VITE_BASE_PATH` | базовий шлях застосунку (`/` локально, `/vue-lottery-app/` на gh-pages) |
+
+Файл `.env` не комітиться (є в `.gitignore`), у репозиторії лежить `.env.example`.
+
+## Структура
 
 ```
 src/
-├── components/
-│   ├── BaseButton.vue            # Компонент кнопки
-│   ├── BaseInput.vue              # Компонент поля вводу (з v-model, помилкою, valid-станом)
-│   ├── WinnerBadge.vue             # Компонент переможця (бейдж + кнопка видалення)
-│   ├── WinnersBlock.vue             # Блок списку переможців + кнопка "New winner"
-│   ├── RegisterForm.vue              # Блок форми реєстрації нового учасника
-│   ├── SearchBar.vue                  # Поле пошуку (filter-by-name з debounce 300мс)
-│   ├── ParticipantsTable.vue           # Блок таблиці з учасниками (сортування, фільтрація, дії)
-│   ├── Modal.vue                        # Багаторазове модальне вікно (слоти + CSS-переходи)
-│   ├── EditParticipantModal.vue          # Модалка редагування учасника (використовує Modal)
-│   └── DeleteConfirmModal.vue             # Модалка підтвердження видалення (використовує Modal)
-├── composables/
-│   ├── useParticipants.ts    # Стан учасників + localStorage (watch deep)
-│   └── useWinners.ts          # Логіка вибору/видалення переможців
-├── types/participant.ts        # Participant, ParticipantFormData, SortField, SortDirection
-├── utils/validators.ts          # Чисті функції валідації форми (без DOM, без alert)
-├── styles/main.scss              # SCSS з точковими імпортами Bootstrap + власні стилі
-├── App.vue                        # Кореневий компонент, що зв'язує блоки через props/emits
-└── main.ts                         # Точка входу
+├── api/http-client.ts          # єдине місце з fetch, VITE_API_URL, помилки, interceptor (refresh при 401)
+├── services/
+│   ├── interfaces.ts           # Readable<T>, Searchable<T>, Creatable<T>, Editable<T>, Deletable<T>
+│   ├── user.service.ts         # UserService (репозиторій користувачів)
+│   ├── auth.service.ts         # AuthService (login, me, refresh)
+│   └── service-provider.ts     # фабрика ServiceProvider.users / ServiceProvider.auth
+├── types/                      # User, CreateUserDto, UpdateUserDto, типи авторизації
+├── stores/                     # Pinia: auth (JWT + localStorage), users, winners
+├── router/index.ts             # маршрути, guards, meta, afterEach (title)
+├── layouts/                    # DefaultLayout, AuthLayout (через meta.layout)
+├── views/                      # Home, About, Login, Users, UserDetails, UserEdit, NotFound
+├── components/                 # AppHeader, AppNavigation, Logo, UsersTable, UserForm, Modal, ...
+└── constants/author.ts         # дані автора та посилання на GitHub (Home / About)
 ```
 
-### Потік даних (props / emits)
+## Маршрути
 
-Весь бізнес-стан (список учасників, переможці) живе в `App.vue` через composables
-`useParticipants`/`useWinners`. Дочірні компоненти отримують дані лише через **props**
-і повідомляють про дії лише через **emits** — жоден дочірній компонент напряму не
-мутує отримані props (`WinnersBlock` не змінює масив `winners`, а лише емітить
-`pick-winner`/`remove-winner`; `ParticipantsTable` не змінює `participants`, а емітить
-`edit-participant`/`delete-participant`; `RegisterForm`/`EditParticipantModal` емітять
-`register`/`update` з новими даними, і саме `App.vue` вирішує, застосовувати їх чи ні
-(наприклад, при дублікаті email) — так демонструється односторонній потік даних
-Vue (props вниз, events вгору).
+| URL               | Сторінка        | Примітки                                              |
+| ----------------- | --------------- | ----------------------------------------------------- |
+| `/`               | Home            | опис проєкту, технології, посилання на GitHub          |
+| `/about`          | About author    | ПІБ, Technical skills, GitHub                          |
+| `/login`          | Login           | `meta.layout = 'auth'`, `guestOnly`                    |
+| `/users`          | Users           | `requiresAuth`, `?page=2&q=john` — стан у query        |
+| `/users/:id`      | User details    | `props: true`, `requiresAuth`                          |
+| `/users/:id/edit` | Edit user       | **вкладений** маршрут у `/users/:id`                   |
+| `/:pathMatch(.*)*`| 404             | посилання на головну                                   |
 
-### Де саме виконано вимоги практичної частини
+Усі сторінки завантажуються лінивo (`() => import(...)`) — у збірці вони окремі чанки.
 
-- **Composition API + TypeScript** — усі компоненти на `<script setup lang="ts">`,
-  усі props/emits типізовані через `defineProps<...>()`/`defineEmits<...>()`.
-- **Обчислювані властивості** — `visibleParticipants` у `ParticipantsTable.vue`
-  (фільтрація + сортування), `winners`/`canPickWinner`/`editingParticipant`/
-  `deletingParticipant` в `App.vue`/`useWinners.ts`.
-- **Обробка подій + модифікатори** — `@keyup.enter="handleSubmit"` у `RegisterForm.vue`,
-  `@keyup.esc="requestClose"` та `@click.self="requestClose"` у `Modal.vue`.
-- **Прив'язування елементів форми** — `v-model` на кастомному компоненті `BaseInput`
-  (`modelValue` prop + `update:modelValue` emit), пояснено явним `:value`/`@input`
-  усередині `BaseInput.vue`.
-- **Props / події компонентів** — наскрізно, див. вище.
-- **Watchers** — `watch(participants, …, { deep: true })` для localStorage
-  (`useParticipants.ts`), `watch(query, …)` з debounce 300мс у `SearchBar.vue`,
-  `watch(() => props.resetTrigger, …)` та `watch(() => props.duplicateEmailError, …)`
-  у `RegisterForm.vue`/`EditParticipantModal.vue`.
-- **Слоти** — `Modal.vue` має іменовані слоти `header`/`footer` і слот за
-  замовчуванням (тіло), що дозволяє переюзати його в `EditParticipantModal.vue`
-  і `DeleteConfirmModal.vue` без дублювання логіки backdrop/Esc/переходів.
-- **CSS-переходи** — `<Transition name="modal-fade">` у `Modal.vue` (SCSS-класи
-  `.modal-fade-*` у `src/styles/main.scss`), анімує і затемнення backdrop, і
-  появу/зникнення самого діалогу.
-- **Багаторазовий компонент таблиці** — `ParticipantsTable.vue` приймає зовнішні
-  дані через props (`participants`) і не залежить від того, звідки вони взялись.
+## Як працює авторизація
 
-## Відповідність дизайну
+1. `POST /auth/login` → `accessToken`, `refreshToken` і дані користувача зберігаються в Pinia-сторі
+   (`stores/auth.ts`) та в `localStorage` (через `watch`).
+2. Захищені запити (`GET /auth/me`) додають заголовок `Authorization: Bearer <accessToken>`.
+3. **Interceptor** у `http-client.ts`: якщо відповідь 401 — один раз викликається
+   `POST /auth/refresh`, токен оновлюється й запит повторюється. Якщо кілька запитів отримали 401
+   одночасно, токен оновлюється лише один раз. Якщо refresh не вдався — користувача розлогінює.
+4. **Guard** `router.beforeEach`: маршрути з `meta.requiresAuth` (`/users` і вкладені) недоступні
+   гостям → редірект на `/login?redirect=<запитана сторінка>`; після логіну користувач повертається
+   на неї. Авторизований користувач на `/login` перенаправляється на `/users`.
+   Значення `redirect` перевіряється (лише внутрішні шляхи), щоб уникнути open redirect.
+5. Кнопка **Logout** замість Login очищує токени й веде на `/login`.
 
-- Верхній блок — рядок із бейджами переможців (`WinnersBlock`/`WinnerBadge`) та
-  кнопкою «New winner».
-- Другий блок — форма реєстрації (`RegisterForm`) з полями Name / Date of Birth /
-  Email / Phone number, валідацією під полем (зелена рамка + ✓ при валідному
-  значенні, червона рамка + текст помилки при невалідному) — без жодного `alert`.
-- Третій блок — таблиця учасників (`ParticipantsTable`) з пошуком (`SearchBar`),
-  сортуванням за іменем/датою народження та діями "Редагувати"/"Видалити".
+## Особливості DummyJSON
+
+POST / PUT / DELETE лише **імітуються**: сервер відповідає коректно, але дані не змінюються.
+Тому після успішної відповіді `stores/users.ts` сам оновлює локальний стан (додає, замінює,
+видаляє) і запам'ятовує ці зміни, щоб вони не зникали при переході між сторінками.
+Усі створені користувачі отримують від сервера один і той самий `id` (209) — тому застосунок
+видає їм унікальні локальні id. Після перезавантаження сторінки локальні зміни зникають
+(це очікувано для fake API).
+
+## Деплой на gh-pages
+
+Варіант 1 — вручну (з гілки `feature/routing`):
+
+```bash
+npm run deploy
+```
+
+Скрипт збирає проєкт з `VITE_BASE_PATH=/vue-lottery-app/` і публікує `dist/` у гілку `gh-pages`.
+
+Варіант 2 — автоматично: `.github/workflows/deploy.yml` збирає й публікує гілку при кожному
+пуші в `feature/routing`.
+
+У налаштуваннях репозиторію: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / root**.
+Адреса: `https://<username>.github.io/vue-lottery-app/`.
 
 ## Контрольні запитання
 
-1. **Обчислювані властивості (computed).** Це властивості, значення яких
-   автоматично виводиться з інших реактивних даних і кешується. На відміну
-   від звичайного методу (який виконується заново при кожному виклику — тобто
-   при кожному рендері шаблону, де він згадується), `computed` перераховується
-   лише тоді, коли реально змінилась одна з реактивних залежностей, використаних
-   усередині нього; між змінами повторні звернення просто повертають закешоване
-   значення. Приклад: `visibleParticipants` у `ParticipantsTable.vue`.
+1. **Що таке патерн Repository?** Це клас, який ховає всю роботу з джерелом даних (API, БД, файл)
+   за простими методами (`getAll`, `getById`, `create`...). Решта програми викликає ці методи і
+   нічого не знає про `fetch` чи URL. У проєкті це `UserService` та `AuthService`.
 
-2. **Кешування computed.** Vue під час першого обчислення `computed` відстежує,
-   які саме реактивні джерела (`ref`/`reactive`/інші `computed`) були прочитані
-   всередині функції-геттера, і підписується на них. Поки жодне з них не
-   змінилось, звернення до `.value` повертає збережений результат без повторного
-   виконання функції. Як тільки одна з залежностей змінюється, `computed`
-   позначається "брудним" і перераховується лише один раз — при наступному
-   зверненні до нього (лениво), а не одразу в момент зміни залежності.
+2. **З чого складається патерн?** Модель (`User`), інтерфейси-контракти (`Readable`, `Creatable`,
+   `Editable`, `Deletable`), сам репозиторій (`UserService`), HTTP-клієнт (`http-client.ts`),
+   фабрика `ServiceProvider` та клієнтський код (компоненти й Pinia-сторі).
 
-3. **Writable computed.** Так, можна — замість функції-геттера передати об'єкт
-   `{ get, set }`: `computed({ get: () => …, set: (value) => { … } })`. Виклик
-   `set` відбувається при спробі присвоїти `computedRef.value = …` і зазвичай
-   усередині оновлює ту реактивну властивість (чи властивості), з якої
-   обчислюється `get`.
+3. **Роль моделі.** Модель описує, які дані ми зберігаємо й отримуємо (поля `User`, типи
+   `CreateUserDto`, `UpdateUserDto`). Завдяки їй TypeScript перевіряє, що ми не помилились у полях.
 
-4. **Способи оголошення обробників подій.** Inline-вираз прямо в шаблоні
-   (`@click="count++"`), посилання на метод компонента (`@click="handleClick"`),
-   inline-виклик методу з аргументами (`@click="handleClick($event, id)"`).
-   Inline-обробник — це JS-вираз, що виконується прямо в контексті шаблону
-   (зручно для простих однорядкових дій); обробник-метод — це визначена в
-   `<script setup>` функція, яку зручно тестувати окремо й повторно
-   використовувати. У проекті: `RegisterForm.vue` використовує метод
-   `handleSubmit`, а `WinnerBadge.vue` — inline-вираз `@click="emit('remove',
-   winner.id)"`.
+4. **Як патерн відокремлює доступ до даних?** Компоненти не викликають `fetch`, а лише
+   `ServiceProvider.users.getAll()`. Якщо зміниться API чи формат відповіді — правимо лише
+   сервіс, а компоненти й сторі лишаються без змін.
 
-5. **Модифікатори подій і ключові модифікатори.** `.prevent` викликає
-   `event.preventDefault()`, `.stop` — `event.stopPropagation()`, `.once` —
-   прибирає обробник після першого спрацювання. Ключові модифікатори (`.enter`,
-   `.esc` тощо) фільтрують подію клавіатури так, щоб обробник спрацьовував лише
-   для конкретної клавіші, без ручної перевірки `event.key` усередині
-   обробника. У проекті: `RegisterForm.vue` — `@keyup.enter="handleSubmit"`
-   (відправка форми по Enter); `Modal.vue` — `@keyup.esc="requestClose"`
-   (закриття по Esc) та `@click.self="requestClose"` (закриття лише при кліку
-   саме на backdrop, не на дочірні елементи діалогу).
+5. **Як патерн допомагає тестуванню?** Клієнтський код залежить від інтерфейсу (`Readable<User>`),
+   а не від конкретного класу. У тесті можна підставити фейковий сервіс з готовими даними —
+   без мережі й реального сервера.
 
-6. **Директива v-model.** Це синтаксичний цукор, що поєднує `:value="x"`
-   (односторонню прив'язку значення до поля) та `@input="x = $event.target.value"`
-   (оновлення змінної при події `input`) в одну директиву. Для звичайного
-   текстового `<input>` ці два записи повністю еквівалентні. Саме цей
-   "розгорнутий" варіант явно показано в `BaseInput.vue`: `:value="modelValue"`
-   + `@input="onInput"`, де `onInput` робить `emit('update:modelValue', …)`.
+6. **Переваги.** Розділення відповідальностей, легше тестувати, код доступу до даних
+   використовується повторно, можна замінити джерело даних (інший API, localStorage), менше
+   дублювання коду й помилок.
 
-7. **v-model з різними елементами форми.** `text`/`textarea` — прив'язує
-   `value`; `checkbox` — прив'язує `checked` (булеве значення для одного
-   чекбокса, або масив вибраних значень, якщо кілька чекбоксів поділяють один
-   `v-model`); `radio` — теж прив'язує `checked`, усі `radio` з одним і тим же
-   `v-model` утворюють групу, і пов'язана змінна отримує `value` вибраної
-   кнопки; `select` — прив'язує `value` вибраної `<option>` (при зміні вибору
-   `v-model` автоматично оновлюється значенням `value` обраної опції).
+7. **Що таке Vue Router?** Офіційна бібліотека маршрутизації. Вона показує потрібний компонент
+   залежно від URL без перезавантаження сторінки (SPA), працює з параметрами URL, guards,
+   вкладеними маршрутами й ліниво завантажує сторінки.
 
-8. **Модифікатори v-model.** `.lazy` змінює подію синхронізації з `input` на
-   `change` (значення оновлюється лише після втрати фокусу / Enter, а не на
-   кожне натискання клавіші); `.number` автоматично приводить введений рядок до
-   `Number` (зручно для числових полів); `.trim` автоматично обрізає пробіли на
-   початку й у кінці введеного рядка.
+8. **Як оголошуються маршрути?** Масивом `routes` у `createRouter`: кожен маршрут — це `path` +
+   `component` (і за потреби `name`, `meta`, `props`, `children`), наприклад
+   `{ path: '/about', name: 'about', component: () => import('@/views/AboutView.vue') }`.
 
-9. **Валідація форми без alert.** Реалізована через чисті функції у
-   `src/utils/validators.ts`, які нічого не знають про DOM чи Vue: окремо
-   перевіряється обов'язковість поля (`validateRequired`), формат email
-   (`EMAIL_REGEXP`), формат телефону (`PHONE_REGEXP`, `+380XXXXXXXXX`) та дата
-   народження (не в майбутньому). `validateParticipantForm` збирає результат у
-   звичайний об'єкт помилок `{ name?, dateOfBirth?, email?, phone? }`. Цей
-   об'єкт зберігається в `reactive errors` компонента форми й передається в
-   `BaseInput` як prop `error`, який рендерить `<p class="form-field__error">`
-   під полем — замість виклику `alert`.
+9. **RouterLink vs RouterView.** `RouterLink` — це посилання для переходу на інший маршрут без
+   перезавантаження (додає клас активного пункту). `RouterView` — місце в шаблоні, куди роутер
+   підставляє компонент поточного маршруту.
 
-10. **Очищення форми без спрацювання валідації.** `resetForm()` у
-    `RegisterForm.vue` скидає `values` до порожніх рядків і одночасно повністю
-    очищує і `errors`, і `touched` (замість того, щоб викликати
-    `runValidation()`). Оскільки `BaseInput` показує помилку лише коли
-    `touched[field] === true` (`:error="touched.name ? errors.name :
-    undefined"`), а `touched` теж скинуто в `false`, порожні поля після
-    очищення не підсвічуються як невалідні.
+10. **Як передати параметри в компонент?** Через динамічний сегмент (`/users/:id`) і опцію
+    `props: true` — тоді `id` приходить у компонент як звичайний prop
+    (`defineProps<{ id: string }>()`), а не через `useRoute().params`.
 
-11. **Props.** Це дані (будь-якого типу — рядки, числа, об'єкти, функції,
-    масиви), які батьківський компонент явно передає дочірньому через атрибути
-    в шаблоні. Напрямок передачі — завжди односторонній, **"згори вниз"**
-    (parent → child): дочірній компонент лише читає props, а не задає їх сам.
+11. **Вкладені маршрути.** Роблять через `children`: дочірній маршрут `edit` всередині
+    `/users/:id` дає адресу `/users/:id/edit`. Його компонент відображається у `<RouterView>`
+    батьківського компонента (`UserDetailsView`).
 
-12. **Чому не можна мутувати props напряму.** Тому що це порушило б
-    односторонній потік даних Vue: значення props належить батькові, і якщо
-    батько передасть нове значення (наприклад, після власного ререндеру),
-    будь-яка локальна мутація всередині дочірнього компонента буде миттєво
-    перезаписана/загублена, а стан стане неузгодженим між компонентами; Vue в
-    dev-режимі навіть виводить попередження при спробі такої мутації.
-    Правильний спосіб — дочірній компонент надсилає **подію** (`emit`) з новим
-    бажаним значенням, а батько сам вирішує, оновлювати свій стан чи ні (саме
-    так `Modal.vue` не ховає себе сам, а просить про це батька через
-    `emit('close')`, і лише після цього `v-if` у `App.vue` прибирає модалку з
-    DOM).
+12. **Навігаційні guards.** Це функції, що виконуються до/після переходу й можуть дозволити,
+    скасувати чи перенаправити навігацію. У проєкті `router.beforeEach` перевіряє авторизацію, а
+    `router.afterEach` змінює заголовок вкладки.
 
-13. **Типізація props через TypeScript.** У `<script setup lang="ts">` —
-    через generic-виклик `defineProps<{ name: string; age?: number }>()`: сам
-    TS-тип уже визначає обов'язковість (поле без `?` — обов'язкове) та
-    необов'язковість (`?`). Значення за замовчуванням для необов'язкових полів
-    задаються через `withDefaults(defineProps<…>(), { age: 18 })`. Приклад:
-    `BaseButton.vue` — `withDefaults(defineProps<{ variant?: …; disabled?:
-    boolean }>(), { variant: 'primary', disabled: false })`.
+13. **Для чого `meta`?** Це додаткові дані маршруту: `requiresAuth` (потрібен вхід), `guestOnly`,
+    `title` (заголовок вкладки), `layout` (який layout використати). Guards та `App.vue` читають
+    їх, щоб вирішити, що робити.
 
-14. **emit і подія дочірнього компонента.** `emit` — спосіб дочірнього
-    компонента "достукатися" до батьківського й повідомити про подію разом з
-    даними. Типізується через `defineEmits<{ eventName: [payload: Type]
-    }>()`, після чого викликається як `emit('eventName', payload)`. Батько
-    підписується на подію в шаблоні через `@event-name="handler"`. Приклад:
-    `WinnerBadge.vue` — `defineEmits<{ remove: [id: string] }>()`, у шаблоні
-    `App.vue`/`WinnersBlock.vue` — `@remove-winner="removeWinner"`.
+14. **Layouts.** У `src/layouts/` лежать `DefaultLayout` (шапка + контент) і `AuthLayout`
+    (сторінка логіну по центру). У `App.vue` обирається layout за `route.meta.layout`, а
+    `<RouterView />` вставляється у слот layout-а.
 
-15. **Двостороннє зв'язування (v-model) на власному компоненті.** Компонент
-    приймає prop `modelValue` і визначає подію `update:modelValue`; коли
-    батько пише `<MyInput v-model="x" />`, Vue автоматично розгортає це в
-    `:model-value="x" @update:model-value="x = $event"`. Саме так реалізовано
-    `BaseInput.vue` (`modelValue` prop + `emit('update:modelValue', …)`), тому
-    `RegisterForm.vue` може писати просто `v-model="values.name"`.
+15. **Що таке JWT?** Це підписаний токен, який сервер видає після входу. Складається з трьох
+    частин через крапку: **header** (алгоритм), **payload** (дані: id користувача, час життя) і
+    **signature** (підпис, що захищає від підробки).
 
-16. **Слоти.** Механізм, що дозволяє батьківському компоненту вставити
-    довільний вміст (розмітку, інші компоненти) усередину заздалегідь
-    визначеного "місця" в шаблоні дочірнього компонента. Слот за замовчуванням
-    (`<slot />` без імені) приймає весь вміст, переданий без явного
-    `v-slot:ім'я`; іменовані слоти (`<slot name="header">…</slot>`) дають
-    змогу визначити кілька незалежних місць вставки в різних частинах
-    шаблону. У `Modal.vue` є три слоти — `header`, тіло (default) і `footer` —
-    завдяки чому один і той самий компонент `Modal` переюзається і в
-    `EditParticipantModal.vue` (форма редагування в тілі, кнопки "Скасувати"/
-    "Оновити дані" у footer), і в `DeleteConfirmModal.vue` (текст підтвердження
-    в тілі, кнопки "Так"/"Ні" у footer) — без дублювання коду backdrop,
-    Esc-обробника чи CSS-переходу.
+16. **Де безпечніше зберігати JWT?** Найбезпечніше — `refreshToken` у `HttpOnly`-cookie (JavaScript
+    його не читає), `accessToken` — у пам'яті. `localStorage` доступний будь-якому скрипту на
+    сторінці, тому при XSS-атаці токен можна вкрасти. У лабораторній `localStorage` використано,
+    бо цього вимагає завдання.
 
-17. **Watchers.** `watch` відстежує зміну конкретного реактивного джерела
-    (`ref`, `reactive`-властивість, або getter-функцію) і виконує побічний
-    ефект (side effect) у відповідь на зміну — на відміну від `computed`, він
-    нічого не повертає і не кешується, а просто реагує. `computed` варто
-    використовувати, коли потрібне похідне значення для відображення
-    (синхронний чистий розрахунок без побічних ефектів); `watch` — коли
-    потрібна саме дія у відповідь на зміну (запис у `localStorage`, виклик
-    API, `emit` події, debounce пошуку). У проекті `computed` —
-    `visibleParticipants`/`winners`; `watch` — збереження в `localStorage`
-    (`useParticipants.ts`), debounce пошуку (`SearchBar.vue`), реакція на
-    `resetTrigger`/`duplicateEmailError` (`RegisterForm.vue`,
-    `EditParticipantModal.vue`).
+17. **accessToken vs refreshToken.** `accessToken` короткоживучий, його додають до кожного
+    захищеного запиту. `refreshToken` живе довше й використовується лише для отримання нового
+    `accessToken` (`POST /auth/refresh`), коли старий протух.
 
-18. **Опції deep та immediate; watchEffect.** `deep: true` змушує `watch`
-    відстежувати й вкладені зміни всередині об'єкта чи масиву (а не лише
-    заміну самого посилання) — без цієї опції `watch` на масив `participants`
-    не відреагував би на `push()` чи зміну поля одного з учасників, лише на
-    повну заміну всього масиву новим. `immediate: true` запускає callback
-    одразу при створенні watcher'а (з поточним значенням), а не тільки після
-    першої зміни. `watchEffect` автоматично відстежує всі реактивні
-    залежності, використані всередині переданої функції (без явного
-    перерахування джерел), і виконується одразу при створенні (поведінка
-    нагадує `watch` з `immediate: true`), але без доступу до старого значення
-    (`oldValue`) і без можливості явно вказати, за чим саме стежити.
+18. **Чому пагінація й пошук у query-параметрах?** Адреса `/users?page=2&q=john` можна скопіювати
+    чи додати в закладки, вона працює з кнопками «назад/вперед» і зберігається після
+    перезавантаження. Локальний стан компонента при цьому втрачається.
 
-19. **localStorage через watcher.** Саме так реалізовано в
-    `useParticipants.ts`: при створенні composable (тобто під час
-    завантаження застосунку) `participants` одразу ініціалізується
-    результатом `loadParticipantsFromStorage()` — читанням і `JSON.parse`
-    значення з `localStorage`. Окремо `watch(participants, (value) => {
-    localStorage.setItem(KEY, JSON.stringify(value)) }, { deep: true })`
-    зберігає актуальний стан масиву в `localStorage` щоразу, коли змінюється
-    сам масив або будь-яка властивість будь-якого учасника всередині нього.
-
-20. **Принципи поділу на компоненти.** Єдина відповідальність (кожен
-    компонент відповідає рівно за одну річ — `BaseButton` лише кнопка,
-    `SearchBar` лише пошук), повторне використання (однотипні елементи UI —
-    `BaseButton`, `BaseInput`, `Modal` — винесені окремо й використовуються в
-    кількох місцях без дублювання), ізоляція стану (суто UI-стан на кшталт
-    `touched`/`searchQuery` живе всередині відповідного компонента, а спільний
-    бізнес-стан — в `App.vue`/composables), чіткий контракт `props`/`emits` між
-    батьком і дитиною. **Багаторазовий (reusable) компонент** — це компонент,
-    не прив'язаний жорстко до конкретних даних чи контексту використання: усе
-    потрібне він отримує через `props`, а про події повідомляє через `emits`,
-    тому його можна вставити в будь-яке інше місце застосунку без зміни коду
-    самого компонента (приклад — `BaseButton`/`BaseInput`/`Modal` однаково
-    працюють і в `RegisterForm`, і в `EditParticipantModal`, і в
-    `DeleteConfirmModal`).
-
-21. **Сортування та фільтрація через computed.** У `ParticipantsTable.vue`
-    обчислювана властивість `visibleParticipants` спочатку фільтрує
-    `props.participants` за `searchQuery` (входження підрядка в ім'я, без
-    урахування регістру завдяки `.toLowerCase()`), а потім сортує відфільтрований
-    масив за полем `sortField` (`name` або `dateOfBirth`) у напрямку
-    `sortDirection` (`localeCompare` для імені, порівняння рядків `yyyy-mm-dd`
-    для дати — таке порівняння еквівалентне хронологічному). Оскільки це
-    `computed`, результат автоматично перераховується щоразу, коли змінюється
-    будь-яка з його залежностей (`props.participants`, `searchQuery`,
-    `sortField`, `sortDirection`) — без потреби вручну викликати
-    фільтрацію/сортування в обробниках подій.
-
-22. **Options API vs Composition API.** Options API організовує компонент
-    через фіксований набір опцій одного об'єкта (`data()`, `methods: {}`,
-    `computed: {}`, `watch: {}` тощо) — логіка однієї функціональної частини
-    виявляється розкиданою по різних секціях файлу. Composition API (функція
-    `setup()` або, як у цьому проекті, `<script setup>`) дозволяє групувати
-    весь пов'язаний код (стан + методи + `computed` + `watch` для однієї
-    функціональності) **в одному місці**, легко виносити повторно
-    використовувану логіку в окремі composables (як `useParticipants.ts`/
-    `useWinners.ts` у цьому проекті) і значно краще працює з виведенням типів
-    TypeScript. Options API простіший для початківців і для зовсім невеликих
-    компонентів із чіткою структурою "по шухлядках"; Composition API виграє в
-    більших застосунках із великою кількістю пов'язаної логіки, яку хочеться
-    перевикористовувати між компонентами.
+19. **Чому після `DELETE` користувач залишається в списку?** DummyJSON лише імітує видалення —
+    на сервері нічого не змінюється, тож новий запит знову поверне цього користувача. Виправлення:
+    після успішної відповіді самим прибрати його з локального стану (`users.value.filter(...)` у
+    `stores/users.ts`) і запам'ятати видалення, щоб він не повертався при зміні сторінки.
