@@ -5,16 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "vue-tsc -b && vite build && node scripts/copy-404.mjs",
     "preview": "vite preview",
     "lint": "eslint \"src/**/*.{ts,vue}\"",
     "lint:fix": "eslint \"src/**/*.{ts,vue}\" --fix",
-    "format": "prettier --write \"src/**/*.{ts,vue,scss}\""
+    "format": "prettier --write \"src/**/*.{ts,vue,scss}\"",
+    "deploy": "cross-env VITE_BASE_PATH=/vue-lottery-app/ npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "@vee-validate/yup": "^4.15.1",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
-    "vue": "^3.5.42"
+    "pinia": "^4.0.3",
+    "vee-validate": "^4.15.1",
+    "vue": "^3.5.42",
+    "vue-router": "^5.4.0",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
@@ -22,9 +28,11 @@
     "@typescript-eslint/parser": "^7.18.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/tsconfig": "^0.9.1",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.2",
     "eslint-plugin-vue": "^9.33.0",
+    "gh-pages": "^6.3.0",
     "prettier": "^3.9.9",
     "sass-embedded": "^1.105.1",
     "typescript": "~6.0.2",
