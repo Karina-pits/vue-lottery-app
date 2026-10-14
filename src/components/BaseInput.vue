@@ -1,21 +1,23 @@
 <script setup lang="ts">
 /**
  * Багаторазовий компонент поля вводу з підписом, повідомленням про
- * помилку та індикацією валідного стану (зелена рамка + галочка) —
- * без використання alert для показу помилок.
+ * помилку та індикацією валідного стану. Підтримує v-model.
  */
 withDefaults(
   defineProps<{
-    modelValue: string;
+    modelValue?: string;
     label: string;
-    type?: 'text' | 'email' | 'tel' | 'date';
+    type?: 'text' | 'email' | 'tel' | 'date' | 'password' | 'number';
     placeholder?: string;
+    autocomplete?: string;
     error?: string;
     valid?: boolean;
   }>(),
   {
+    modelValue: '',
     type: 'text',
     placeholder: '',
+    autocomplete: 'off',
     error: undefined,
     valid: false,
   },
@@ -29,26 +31,21 @@ const emit = defineEmits<{
 function onInput(event: Event): void {
   emit('update:modelValue', (event.target as HTMLInputElement).value);
 }
-
-function onBlur(): void {
-  emit('blur');
-}
 </script>
 
 <template>
   <div class="form-field">
     <label class="form-field__label">{{ label }}</label>
-    <div class="position-relative">
-      <input
-        class="form-control"
-        :class="{ 'is-invalid': error, 'is-valid': valid && !error }"
-        :type="type"
-        :placeholder="placeholder"
-        :value="modelValue"
-        @input="onInput"
-        @blur="onBlur"
-      />
-    </div>
+    <input
+      class="form-control"
+      :class="{ 'is-invalid': error, 'is-valid': valid && !error }"
+      :type="type"
+      :placeholder="placeholder"
+      :autocomplete="autocomplete"
+      :value="modelValue"
+      @input="onInput"
+      @blur="emit('blur')"
+    />
     <p v-if="error" class="form-field__error">{{ error }}</p>
   </div>
 </template>

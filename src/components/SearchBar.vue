@@ -1,38 +1,43 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
+
+const props = withDefaults(defineProps<{ modelValue?: string }>(), { modelValue: '' });
 
 const emit = defineEmits<{
-  'filter-by-name': [query: string];
+  'update:modelValue': [query: string];
 }>();
 
-const query = ref('');
+const query = ref(props.modelValue);
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
-// Передача події filter-by-name реалізована через watch із затримкою (debounce) 300 мс,
-// щоб не фільтрувати список учасників на кожне натискання клавіші.
+// Значення з URL змінилось ззовні (кнопка "назад", скидання) — синхронізуємо поле.
+watch(
+  () => props.modelValue,
+  (value) => {
+    query.value = value;
+  },
+);
+
+// Подія надсилається з затримкою (debounce) 300 мс, щоб не робити запит на кожну літеру.
 watch(query, (value) => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-  }
+  clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
-    emit('filter-by-name', value.trim());
+    const trimmed = value.trim();
+    if (trimmed !== props.modelValue) {
+      emit('update:modelValue', trimmed);
+    }
   }, 300);
 });
 
-onBeforeUnmount(() => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-  }
-});
+onBeforeUnmount(() => clearTimeout(debounceTimer));
 </script>
 
 <template>
   <input
     v-model="query"
-    type="text"
-    class="form-control form-control-sm"
-    style="max-width: 220px"
+    type="search"
+    class="form-control"
     placeholder="Search by name…"
-    aria-label="Пошук учасників за іменем"
+    aria-label="Пошук користувачів за іменем"
   />
 </template>
