@@ -35,8 +35,18 @@ const emit = defineEmits<{
     <AppMessage v-if="error">{{ error }}</AppMessage>
 
     <template #footer>
-      <AppButton :label="cancelLabel" severity="secondary" :disabled="loading" @click="emit('cancel')" />
-      <AppButton :label="confirmLabel" severity="danger" :loading="loading" @click="emit('confirm')" />
+      <AppButton
+        :label="cancelLabel"
+        severity="secondary"
+        :disabled="loading"
+        @click="emit('cancel')"
+      />
+      <AppButton
+        :label="confirmLabel"
+        severity="danger"
+        :loading="loading"
+        @click="emit('confirm')"
+      />
     </template>
   </Dialog>
 </template>

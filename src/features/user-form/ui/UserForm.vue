@@ -169,7 +169,11 @@ const onSubmit = handleSubmit((values) => {
 
     <div class="form-block__actions">
       <AppButton label="Cancel" severity="secondary" @click="emit('cancel')" />
-      <AppButton type="submit" :loading="isSubmitting" :label="isSubmitting ? 'Saving…' : submitLabel" />
+      <AppButton
+        type="submit"
+        :loading="isSubmitting"
+        :label="isSubmitting ? 'Saving…' : submitLabel"
+      />
     </div>
   </form>
 </template>

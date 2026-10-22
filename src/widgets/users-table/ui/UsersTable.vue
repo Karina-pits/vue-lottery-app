@@ -47,7 +47,12 @@ const columns: AppTableColumn[] = [
           size="small"
           @click="router.push({ name: 'user-edit', params: { id: row.id } })"
         />
-        <AppButton label="Видалити" severity="danger" size="small" @click="emit('delete-user', row)" />
+        <AppButton
+          label="Видалити"
+          severity="danger"
+          size="small"
+          @click="emit('delete-user', row)"
+        />
       </div>
     </template>
   </AppTable>

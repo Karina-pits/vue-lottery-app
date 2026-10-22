@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Logo from '@/widgets/app-header/ui/Logo.vue';
+import { Logo } from '@/widgets/app-header';
 </script>
 
 <template>

@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia';
 import { computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useUsersStore } from '@/entities/user/model/users.store';
+import { useUsersStore } from '@/entities/user';
 import { AppButton, AppMessage, AppSpinner } from '@/shared/ui';
 
 // id приходить як prop завдяки `props: true` у конфігурації маршруту
@@ -68,7 +68,11 @@ watch(
         </dl>
 
         <div class="form-block__actions">
-          <AppButton label="Back to users" severity="secondary" @click="router.push({ name: 'users' })" />
+          <AppButton
+            label="Back to users"
+            severity="secondary"
+            @click="router.push({ name: 'users' })"
+          />
           <AppButton
             v-if="route.name !== 'user-edit'"
             label="Edit"

@@ -44,7 +44,12 @@ function cellValue(row: T, field: string): unknown {
     <Column v-if="showIndex" header="#" class="app-table__index">
       <template #body="{ index }">{{ startIndex + index + 1 }}</template>
     </Column>
-    <Column v-for="column in columns" :key="column.field" :field="column.field" :header="column.header">
+    <Column
+      v-for="column in columns"
+      :key="column.field"
+      :field="column.field"
+      :header="column.header"
+    >
       <template #body="{ data }">
         <slot :name="`cell-${column.field}`" :row="data as T">
           {{ cellValue(data as T, column.field) }}

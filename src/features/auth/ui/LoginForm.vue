@@ -61,7 +61,11 @@ const onSubmit = handleSubmit(async (values) => {
     <AppMessage v-if="session.error">{{ session.error }}</AppMessage>
 
     <div class="form-block__actions">
-      <AppButton type="submit" :loading="session.isLoading" :label="session.isLoading ? 'Logging in…' : 'Login'" />
+      <AppButton
+        type="submit"
+        :loading="session.isLoading"
+        :label="session.isLoading ? 'Logging in…' : 'Login'"
+      />
     </div>
   </form>
 </template>

@@ -2,13 +2,20 @@
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { PAGE_SIZE, useUsersStore } from '@/entities/user/model/users.store';
-import type { CreateUserDto, User } from '@/entities/user/model/types';
+import { PAGE_SIZE, useUsersStore } from '@/entities/user';
+import type { CreateUserDto, User } from '@/entities/user';
 import { DeleteUserDialog } from '@/features/delete-user';
 import { useWinnersStore, WinnersBlock } from '@/features/pick-winner';
 import { SearchBar } from '@/features/search-users';
 import { UserForm } from '@/features/user-form';
-import { AppButton, AppDialog, AppMessage, AppPagination, AppSpinner, useAppToast } from '@/shared/ui';
+import {
+  AppButton,
+  AppDialog,
+  AppMessage,
+  AppPagination,
+  AppSpinner,
+  useAppToast,
+} from '@/shared/ui';
 import { UsersTable } from '@/widgets/users-table';
 
 const route = useRoute();
@@ -48,9 +55,7 @@ function handleSearch(query: string): void {
 }
 
 // --- Переможці ---
-const canPickWinner = computed(
-  () => !isLoading.value && winnersStore.canPickWinner(users.value),
-);
+const canPickWinner = computed(() => !isLoading.value && winnersStore.canPickWinner(users.value));
 
 // --- Створення користувача ---
 const isCreateOpen = ref(false);

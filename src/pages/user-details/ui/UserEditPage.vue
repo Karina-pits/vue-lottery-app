@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useUsersStore } from '@/entities/user/model/users.store';
-import type { CreateUserDto, User } from '@/entities/user/model/types';
+import { useUsersStore } from '@/entities/user';
+import type { CreateUserDto, User } from '@/entities/user';
 import { UserForm } from '@/features/user-form';
 import type { UserFormValues } from '@/features/user-form';
 import { useAppToast } from '@/shared/ui';

@@ -1,9 +1,9 @@
 name: Deploy to GitHub Pages
 
-# Деплой гілки feature/routing у гілку gh-pages
+# Деплой гілок feature/routing та feature/fsd у гілку gh-pages
 on:
   push:
-    branches: [feature/routing]
+    branches: [feature/routing, feature/fsd]
   workflow_dispatch:
 
 permissions:
