@@ -10,7 +10,8 @@
     "lint": "eslint \"src/**/*.{ts,vue}\"",
     "lint:fix": "eslint \"src/**/*.{ts,vue}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,vue,scss}\"",
-    "deploy": "cross-env VITE_BASE_PATH=/vue-lottery-app/ npm run build && gh-pages -d dist"
+    "deploy": "cross-env VITE_BASE_PATH=/vue-lottery-app/ npm run build && gh-pages -d dist",
+    "lint:fsd": "eslint --no-eslintrc -c .eslintrc.fsd.json \"src/**/*.{ts,vue}\""
   },
   "dependencies": {
     "@primeuix/themes": "^3.0.2",

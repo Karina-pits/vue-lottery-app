@@ -1,0 +1,56 @@
+{
+  "parser": "vue-eslint-parser",
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser",
+    "ecmaVersion": 2022,
+    "sourceType": "module"
+  },
+  "plugins": ["boundaries"],
+  "settings": {
+    "import/resolver": {
+      "alias": {
+        "map": [["@", "./src"]],
+        "extensions": [".ts", ".vue", ".scss", ".json"]
+      }
+    },
+    "boundaries/include": ["src/**/*"],
+    "boundaries/ignore": ["src/**/*.d.ts"],
+    "boundaries/dependency-nodes": ["import", "dynamic-import"],
+    "boundaries/elements": [
+      { "type": "app", "pattern": "src/app", "mode": "folder" },
+      { "type": "pages", "pattern": "src/pages/*", "mode": "folder", "capture": ["slice"] },
+      { "type": "widgets", "pattern": "src/widgets/*", "mode": "folder", "capture": ["slice"] },
+      { "type": "features", "pattern": "src/features/*", "mode": "folder", "capture": ["slice"] },
+      { "type": "entities", "pattern": "src/entities/*", "mode": "folder", "capture": ["slice"] },
+      { "type": "shared", "pattern": "src/shared/*", "mode": "folder", "capture": ["segment"] }
+    ]
+  },
+  "rules": {
+    "boundaries/element-types": [
+      "error",
+      {
+        "default": "disallow",
+        "message": "FSD: шар '${file.type}' не може імпортувати з '${dependency.type}'",
+        "rules": [
+          { "from": "app", "allow": ["pages", "widgets", "features", "entities", "shared"] },
+          { "from": "pages", "allow": ["widgets", "features", "entities", "shared"] },
+          { "from": "widgets", "allow": ["features", "entities", "shared"] },
+          { "from": "features", "allow": ["entities", "shared"] },
+          { "from": "entities", "allow": ["shared"] },
+          { "from": "shared", "allow": ["shared"] }
+        ]
+      }
+    ],
+    "boundaries/entry-point": [
+      "error",
+      {
+        "default": "disallow",
+        "message": "FSD: імпорт '${dependency.source}' «вглиб» слайса заборонений — використовуйте Public API (index.ts)",
+        "rules": [
+          { "target": ["pages", "widgets", "features", "entities", "shared"], "allow": "index.ts" },
+          { "target": ["app"], "allow": "**" }
+        ]
+      }
+    ]
+  }
+}
