@@ -1,10 +1,12 @@
 # vue-lottery-app
 
-Лабораторна робота №5 — **керування маршрутами з vue-router**, патерн **Repository** та
-**JWT-авторизація** (гілка `feature/routing`).
-Стек: Vue 3 (Composition API) + TypeScript, Vue Router, Pinia, VeeValidate + yup,
-Bootstrap 5 (SCSS, лише потрібні партиали), Vite, ESLint + Prettier.
-API: публічний [DummyJSON](https://dummyjson.com) (Users + Auth).
+Лабораторна робота №6 — **Feature-Sliced Design (FSD)**, керування станом у **Pinia** та
+**UI-бібліотека PrimeVue** (гілка `feature/fsd`, створена від `feature/routing`).
+Функціонал лабораторної №5 збережено: маршрутизація, користувачі (DummyJSON), JWT-авторизація,
+патерн Repository.
+
+Стек: Vue 3 (Composition API, `<script setup>`) + TypeScript, Vue Router, Pinia (setup stores),
+PrimeVue + SCSS, VeeValidate + yup, Vite, ESLint (+ `eslint-plugin-boundaries`).
 
 ## Запуск
 
@@ -13,167 +15,217 @@ npm install
 cp .env.example .env     # на Windows: copy .env.example .env
 npm run dev              # dev-сервер
 npm run build            # vue-tsc + збірка у dist/ (+ dist/404.html для GitHub Pages)
-npm run lint             # ESLint
+npm run lint             # ESLint (включає правила FSD)
+npm run lint:fsd         # лише правила FSD (eslint-plugin-boundaries)
 ```
 
-Тестовий акаунт для входу: **emilys / emilyspass**.
+Тестовий акаунт: **emilys / emilyspass**. Змінні середовища (`.env`): `VITE_API_URL`,
+`VITE_BASE_PATH` (див. `.env.example`).
 
-### Змінні оточення (`.env`)
-
-| Змінна           | Призначення                                                    |
-| ---------------- | -------------------------------------------------------------- |
-| `VITE_API_URL`   | базова адреса API (`https://dummyjson.com`)                    |
-| `VITE_BASE_PATH` | базовий шлях застосунку (`/` локально, `/vue-lottery-app/` на gh-pages) |
-
-Файл `.env` не комітиться (є в `.gitignore`), у репозиторії лежить `.env.example`.
-
-## Структура
+## Структура (FSD)
 
 ```
 src/
-├── api/http-client.ts          # єдине місце з fetch, VITE_API_URL, помилки, interceptor (refresh при 401)
-├── services/
-│   ├── interfaces.ts           # Readable<T>, Searchable<T>, Creatable<T>, Editable<T>, Deletable<T>
-│   ├── user.service.ts         # UserService (репозиторій користувачів)
-│   ├── auth.service.ts         # AuthService (login, me, refresh)
-│   └── service-provider.ts     # фабрика ServiceProvider.users / ServiceProvider.auth
-├── types/                      # User, CreateUserDto, UpdateUserDto, типи авторизації
-├── stores/                     # Pinia: auth (JWT + localStorage), users, winners
-├── router/index.ts             # маршрути, guards, meta, afterEach (title)
-├── layouts/                    # DefaultLayout, AuthLayout (через meta.layout)
-├── views/                      # Home, About, Login, Users, UserDetails, UserEdit, NotFound
-├── components/                 # AppHeader, AppNavigation, Logo, UsersTable, UserForm, Modal, ...
-└── constants/author.ts         # дані автора та посилання на GitHub (Home / About)
+├── app/
+│   ├── providers/
+│   │   ├── router/index.ts   # createRouter, маршрути, guard-и, title
+│   │   ├── services.ts       # реєстрація UserService та AuthService у ServiceProvider
+│   │   ├── store.ts          # Pinia + pinia-plugin-persistedstate
+│   │   └── ui.ts             # PrimeVue: тема, темний режим, ToastService
+│   ├── layouts/              # DefaultLayout, AuthLayout (через meta.layout)
+│   ├── styles/main.scss      # глобальні стилі на токенах теми PrimeVue
+│   ├── App.vue
+│   └── main.ts
+├── pages/        home · about · users · user-details (+ UserEditPage) · login · not-found
+├── widgets/      app-header (AppHeader + AppNavigation + Logo) · users-table
+├── features/     auth · user-form · search-users · pick-winner · delete-user · theme-toggle
+├── entities/     user · session · settings
+└── shared/
+    ├── api/      http-client, інтерфейси Repository, ServiceProvider
+    ├── ui/       AppButton, AppInput, AppSelect, AppTable, AppDialog, AppConfirmDialog, ...
+    └── config/   AUTHOR, PROJECT, APP_TITLE
 ```
 
-## Маршрути
+Кожен слайс має `index.ts` (Public API). Приклад: `@/entities/user` віддає `User`, `CreateUserDto`,
+`UpdateUserDto`, `UserService`, `useUsersStore`, `PAGE_SIZE`.
 
-| URL               | Сторінка        | Примітки                                              |
-| ----------------- | --------------- | ----------------------------------------------------- |
-| `/`               | Home            | опис проєкту, технології, посилання на GitHub          |
-| `/about`          | About author    | ПІБ, Technical skills, GitHub                          |
-| `/login`          | Login           | `meta.layout = 'auth'`, `guestOnly`                    |
-| `/users`          | Users           | `requiresAuth`, `?page=2&q=john` — стан у query        |
-| `/users/:id`      | User details    | `props: true`, `requiresAuth`                          |
-| `/users/:id/edit` | Edit user       | **вкладений** маршрут у `/users/:id`                   |
-| `/:pathMatch(.*)*`| 404             | посилання на головну                                   |
+### Діаграма залежностей шарів
 
-Усі сторінки завантажуються лінивo (`() => import(...)`) — у збірці вони окремі чанки.
+Стрілка означає «може імпортувати з». Слайси одного шару одне одного не імпортують.
 
-## Як працює авторизація
+```mermaid
+flowchart TD
+    app["app<br/>main.ts · App.vue · router + guards · services · Pinia · UI · styles"]
+    pages["pages<br/>home · about · users · user-details · login · not-found"]
+    widgets["widgets<br/>app-header · users-table"]
+    features["features<br/>auth · user-form · search-users · pick-winner · delete-user · theme-toggle"]
+    entities["entities<br/>user · session · settings"]
+    shared["shared<br/>api · ui · config"]
 
-1. `POST /auth/login` → `accessToken`, `refreshToken` і дані користувача зберігаються в Pinia-сторі
-   (`stores/auth.ts`) та в `localStorage` (через `watch`).
-2. Захищені запити (`GET /auth/me`) додають заголовок `Authorization: Bearer <accessToken>`.
-3. **Interceptor** у `http-client.ts`: якщо відповідь 401 — один раз викликається
-   `POST /auth/refresh`, токен оновлюється й запит повторюється. Якщо кілька запитів отримали 401
-   одночасно, токен оновлюється лише один раз. Якщо refresh не вдався — користувача розлогінює.
-4. **Guard** `router.beforeEach`: маршрути з `meta.requiresAuth` (`/users` і вкладені) недоступні
-   гостям → редірект на `/login?redirect=<запитана сторінка>`; після логіну користувач повертається
-   на неї. Авторизований користувач на `/login` перенаправляється на `/users`.
-   Значення `redirect` перевіряється (лише внутрішні шляхи), щоб уникнути open redirect.
-5. Кнопка **Logout** замість Login очищує токени й веде на `/login`.
-
-## Особливості DummyJSON
-
-POST / PUT / DELETE лише **імітуються**: сервер відповідає коректно, але дані не змінюються.
-Тому після успішної відповіді `stores/users.ts` сам оновлює локальний стан (додає, замінює,
-видаляє) і запам'ятовує ці зміни, щоб вони не зникали при переході між сторінками.
-Усі створені користувачі отримують від сервера один і той самий `id` (209) — тому застосунок
-видає їм унікальні локальні id. Після перезавантаження сторінки локальні зміни зникають
-(це очікувано для fake API).
-
-## Деплой на gh-pages
-
-Варіант 1 — вручну (з гілки `feature/routing`):
-
-```bash
-npm run deploy
+    app --> pages --> widgets --> features --> entities --> shared
+    app -.-> widgets
+    app -.-> features
+    app -.-> entities
+    app -.-> shared
+    pages -.-> features
+    pages -.-> entities
+    pages -.-> shared
+    widgets -.-> entities
+    widgets -.-> shared
+    features -.-> shared
+    classDef layer fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e;
+    class app,pages,widgets,features,entities,shared layer;
 ```
 
-Скрипт збирає проєкт з `VITE_BASE_PATH=/vue-lottery-app/` і публікує `dist/` у гілку `gh-pages`.
+### Перевірка правил FSD лінтером
 
-Варіант 2 — автоматично: `.github/workflows/deploy.yml` збирає й публікує гілку при кожному
-пуші в `feature/routing`.
+`.eslintrc.fsd.json` налаштовує `eslint-plugin-boundaries`:
 
-У налаштуваннях репозиторію: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / root**.
-Адреса: `https://<username>.github.io/vue-lottery-app/`.
+- `boundaries/element-types` — тільки імпорти «вниз» по шарах; слайси одного шару одне одного не
+  імпортують (`features/auth` ↛ `features/user-form`); `shared` не залежить від `entities`;
+- `boundaries/entry-point` — імпорт «вглиб» слайса заборонений, лише через `index.ts`
+  (`@/entities/user/model/users.store` — помилка, `@/entities/user` — ок);
+- динамічні імпорти (`import('@/pages/users')`) у роутері теж перевіряються.
+
+`npm run lint:fsd` запускає тільки ці правила, `npm run lint` — усі правила разом (FSD підключено
+через `extends`). Усі помилки виправлені. Перевірено негативними прикладами: імпорт `features →
+features`, `entities → features`, `shared → entities` та глибокий імпорт — лінтер повідомляє про
+помилку.
+
+## Repository у FSD
+
+| Частина | Розташування |
+| --- | --- |
+| HTTP-клієнт, `Readable`, `Creatable`, `Editable`, `Deletable`, `Searchable` | `shared/api` |
+| `User`, `CreateUserDto`, `UpdateUserDto` | `entities/user/model/types.ts` |
+| `UserService` | `entities/user/api/user.service.ts` |
+| `AuthService`, типи авторизації | `entities/session/api`, `entities/session/model` |
+| `ServiceProvider` (універсальний реєстр) | `shared/api/service-provider.ts` |
+| Реєстрація `UserService` та `AuthService` | `app/providers/services.ts` |
+
+`ServiceProvider` з лаби №5 імпортував `UserService` напряму, а `shared` не може залежати від
+`entities`. Тепер це універсальний реєстр (`register(key, factory)` / `get<T>(key)`), а конкретні
+сервіси реєструє шар `app`, який може імпортувати з усіх шарів.
+
+## Pinia
+
+- `useSessionStore` (`entities/session`): `user`, `accessToken`, `refreshToken`, `isAuthenticated`,
+  `setSession` / `clearSession`, `login`, `logout`, `refreshAccessToken`, `initSession`.
+- `useUsersStore` (`entities/user`): `users`, `total`, `hasUsers`, `isLoading`, `error`,
+  `fetchUsers`, `fetchUser`, `createUser`, `updateUser`, `removeUser`. Після створення, редагування
+  й видалення стор сам оновлює стан (DummyJSON лише імітує запис).
+- `useSettingsStore` (`entities/settings`): тема (`light` / `dark`), зберігається плагіном.
+- `useWinnersStore` (`features/pick-winner`): переможці лотереї.
+
+Усі стори — setup stores; у компонентах стан беремо через `storeToRefs`, дії деструктуруємо
+напряму. Сторінки й віджети звертаються лише до сторів, а не до сервісів.
+
+### Ручне збереження (session) проти `pinia-plugin-persistedstate` (settings)
+
+| | Ручна реалізація (`session.store.ts`) | `pinia-plugin-persistedstate` (`settings.store.ts`) |
+| --- | --- | --- |
+| Код | `loadSession`, `persist`, `setSession`, `clearSession` (~25 рядків) | одна опція `persist: { key, pick: ['theme'] }` |
+| Гнучкість | повний контроль: зберігаємо лише коли є всі токени, видаляємо ключ при виході, один JSON | задає лише ключ, список полів і сховище |
+| Коли зберігається | у конкретних місцях (`setSession`, оновлення токена) | автоматично після кожної зміни стану |
+| Ризик помилок | можна забути викликати `persist()` | немає |
+| Підходить для | складної логіки (токени, умови очищення) | простих налаштувань (тема, мова) |
+
+## UI-бібліотека (PrimeVue)
+
+- Підключено окремі компоненти (`primevue/button`, `primevue/datatable`, ...) — у збірку потрапляє
+  лише те, що використано (tree-shaking); пресет Aura + основний колір `sky` (близько до синього
+  дизайну), темна тема — клас `.app-dark` на `<html>` (`app/providers/ui.ts`).
+- Обгортки в `shared/ui`: `AppButton`, `AppInput` (показує помилку валідації), `AppSelect`,
+  `AppTable`, `AppDialog`, `AppConfirmDialog` (підтвердження видалення), `AppPagination`,
+  `AppMessage`, `AppSpinner`, `AppToast` + `useAppToast`.
+- Компоненти PrimeVue імпортуються лише в `shared/ui` та `app/providers/ui.ts`.
+- Сповіщення (toast): користувача створено / оновлено / видалено, помилки операцій та авторизації.
+- VeeValidate інтегровано з `AppInput` / `AppSelect` у формі входу (`features/auth`) та формі
+  користувача (`features/user-form`).
+- Перемикач світлої/темної теми: `features/theme-toggle` + `entities/settings`.
+
+## Автентифікація (без змін відносно лаби №5)
+
+JWT: `POST /auth/login`, заголовок `Authorization: Bearer` для `GET /auth/me`, автоматичне оновлення
+`accessToken` через `POST /auth/refresh` при відповіді 401 (interceptor у `shared/api/http-client.ts`,
+обробники підключає `app/main.ts`), guard `beforeEach` із `meta.requiresAuth` та `redirect`
+(`app/providers/router`).
+
+## Порядок виконання (історія комітів)
+
+1. `chore: add Pinia, UI library, FSD linter`
+2. `refactor: introduce FSD folder structure`
+3. `refactor: split Repository across FSD layers`
+4. `feat: add Pinia stores - session and users`
+5. `feat: add shared/ui wrappers`
+6. `refactor: use wrappers and stores in pages and widgets`
+7. `chore: fix FSD lint errors`
+
+## Що перевірено (відсутність регресій)
+
+Наскрізний сценарій (jsdom, мок API): гість на `/users?page=2` → `/login?redirect=...` → валідація й
+помилка входу (у формі та toast) → успішний вхід і повернення на `/users?page=2`; пункт меню
+Users активний; пагінація (нумерація колонки #), пошук через `?q=`; максимум 3 переможці та
+неактивна кнопка; створення користувача (діалог + toast + рядок у таблиці); видалення з підтвердженням;
+`/users/:id`, вкладений `/users/:id/edit`, 404; перемикач теми зберігається в `localStorage`;
+Logout → `/login`.
 
 ## Контрольні запитання
 
-1. **Що таке патерн Repository?** Це клас, який ховає всю роботу з джерелом даних (API, БД, файл)
-   за простими методами (`getAll`, `getById`, `create`...). Решта програми викликає ці методи і
-   нічого не знає про `fetch` чи URL. У проєкті це `UserService` та `AuthService`.
-
-2. **З чого складається патерн?** Модель (`User`), інтерфейси-контракти (`Readable`, `Creatable`,
-   `Editable`, `Deletable`), сам репозиторій (`UserService`), HTTP-клієнт (`http-client.ts`),
-   фабрика `ServiceProvider` та клієнтський код (компоненти й Pinia-сторі).
-
-3. **Роль моделі.** Модель описує, які дані ми зберігаємо й отримуємо (поля `User`, типи
-   `CreateUserDto`, `UpdateUserDto`). Завдяки їй TypeScript перевіряє, що ми не помилились у полях.
-
-4. **Як патерн відокремлює доступ до даних?** Компоненти не викликають `fetch`, а лише
-   `ServiceProvider.users.getAll()`. Якщо зміниться API чи формат відповіді — правимо лише
-   сервіс, а компоненти й сторі лишаються без змін.
-
-5. **Як патерн допомагає тестуванню?** Клієнтський код залежить від інтерфейсу (`Readable<User>`),
-   а не від конкретного класу. У тесті можна підставити фейковий сервіс з готовими даними —
-   без мережі й реального сервера.
-
-6. **Переваги.** Розділення відповідальностей, легше тестувати, код доступу до даних
-   використовується повторно, можна замінити джерело даних (інший API, localStorage), менше
-   дублювання коду й помилок.
-
-7. **Що таке Vue Router?** Офіційна бібліотека маршрутизації. Вона показує потрібний компонент
-   залежно від URL без перезавантаження сторінки (SPA), працює з параметрами URL, guards,
-   вкладеними маршрутами й ліниво завантажує сторінки.
-
-8. **Як оголошуються маршрути?** Масивом `routes` у `createRouter`: кожен маршрут — це `path` +
-   `component` (і за потреби `name`, `meta`, `props`, `children`), наприклад
-   `{ path: '/about', name: 'about', component: () => import('@/views/AboutView.vue') }`.
-
-9. **RouterLink vs RouterView.** `RouterLink` — це посилання для переходу на інший маршрут без
-   перезавантаження (додає клас активного пункту). `RouterView` — місце в шаблоні, куди роутер
-   підставляє компонент поточного маршруту.
-
-10. **Як передати параметри в компонент?** Через динамічний сегмент (`/users/:id`) і опцію
-    `props: true` — тоді `id` приходить у компонент як звичайний prop
-    (`defineProps<{ id: string }>()`), а не через `useRoute().params`.
-
-11. **Вкладені маршрути.** Роблять через `children`: дочірній маршрут `edit` всередині
-    `/users/:id` дає адресу `/users/:id/edit`. Його компонент відображається у `<RouterView>`
-    батьківського компонента (`UserDetailsView`).
-
-12. **Навігаційні guards.** Це функції, що виконуються до/після переходу й можуть дозволити,
-    скасувати чи перенаправити навігацію. У проєкті `router.beforeEach` перевіряє авторизацію, а
-    `router.afterEach` змінює заголовок вкладки.
-
-13. **Для чого `meta`?** Це додаткові дані маршруту: `requiresAuth` (потрібен вхід), `guestOnly`,
-    `title` (заголовок вкладки), `layout` (який layout використати). Guards та `App.vue` читають
-    їх, щоб вирішити, що робити.
-
-14. **Layouts.** У `src/layouts/` лежать `DefaultLayout` (шапка + контент) і `AuthLayout`
-    (сторінка логіну по центру). У `App.vue` обирається layout за `route.meta.layout`, а
-    `<RouterView />` вставляється у слот layout-а.
-
-15. **Що таке JWT?** Це підписаний токен, який сервер видає після входу. Складається з трьох
-    частин через крапку: **header** (алгоритм), **payload** (дані: id користувача, час життя) і
-    **signature** (підпис, що захищає від підробки).
-
-16. **Де безпечніше зберігати JWT?** Найбезпечніше — `refreshToken` у `HttpOnly`-cookie (JavaScript
-    його не читає), `accessToken` — у пам'яті. `localStorage` доступний будь-якому скрипту на
-    сторінці, тому при XSS-атаці токен можна вкрасти. У лабораторній `localStorage` використано,
-    бо цього вимагає завдання.
-
-17. **accessToken vs refreshToken.** `accessToken` короткоживучий, його додають до кожного
-    захищеного запиту. `refreshToken` живе довше й використовується лише для отримання нового
-    `accessToken` (`POST /auth/refresh`), коли старий протух.
-
-18. **Чому пагінація й пошук у query-параметрах?** Адреса `/users?page=2&q=john` можна скопіювати
-    чи додати в закладки, вона працює з кнопками «назад/вперед» і зберігається після
-    перезавантаження. Локальний стан компонента при цьому втрачається.
-
-19. **Чому після `DELETE` користувач залишається в списку?** DummyJSON лише імітує видалення —
-    на сервері нічого не змінюється, тож новий запит знову поверне цього користувача. Виправлення:
-    після успішної відповіді самим прибрати його з локального стану (`users.value.filter(...)` у
-    `stores/users.ts`) і запам'ятати видалення, щоб він не повертався при зміні сторінки.
+1. **Що таке FSD і які проблеми вирішує?** Методологія організації фронтенд-коду: де розміщувати код
+   і які модулі від яких можуть залежати. Вирішує хаос у структурі (папки «components», «utils», де
+   все змішане), складність пошуку коду, циклічні залежності та проблеми масштабування й командної
+   роботи.
+2. **Які шари і в якому порядку?** Від найвищого до найнижчого: `app` → `pages` → `widgets` →
+   `features` → `entities` → `shared`. Чим вище шар, тим більше він знає про застосунок; нижні шари
+   більш загальні й повторно використовувані, тому не повинні залежати від верхніх.
+3. **Головне правило імпортів.** Модуль імпортує лише з шарів, що **нижче**. `features` може
+   імпортувати з `entities` та `shared`, але **не** з `widgets`.
+4. **Чому слайси одного шару не імпортують один одного?** Так слайси лишаються незалежними (можна
+   змінити чи видалити один, не зачепивши інший) і не виникає циклів. Якщо потрібен спільний код,
+   його піднімають у нижній шар (`entities` чи `shared`) або об'єднують на верхньому шарі (сторінка
+   чи віджет оркеструє кілька слайсів — як `UsersPage` після `removeUser` викликає
+   `removeWinner`).
+5. **Слайс і сегмент.** Слайс — розбиття всередині шару за предметною областю (`entities/user`,
+   `features/auth`). Сегмент — розбиття слайса за технічним призначенням: `ui`, `model`, `api`,
+   `lib`, `config`.
+6. **Public API слайса.** Файл `index.ts`, що реекспортує дозволене. Інші слайси імпортують лише
+   через нього, тож внутрішню структуру слайса можна змінювати без поломки споживачів. Глибокий
+   імпорт заборонено лінтером.
+7. **`entities` проти `features`.** `entities` — бізнес-сутності (дані й правила): `user`
+   (типи, `UserService`, store), `session`, `settings`. `features` — дії користувача з
+   бізнес-цінністю: `auth` (вхід/вихід), `user-form`, `search-users`, `pick-winner`, `delete-user`.
+8. **Чому `app` та `shared` не діляться на слайси?** Вони не мають предметної області: `app` — це
+   ініціалізація всього застосунку, `shared` — універсальний код без бізнес-логіки. Тому вони
+   складаються безпосередньо із сегментів.
+9. **Чому `ServiceProvider` не можна залишити як у лабі №5?** Він напряму імпортував `UserService`
+   з `entities`, а `shared` не може залежати від `entities`. Рішення: універсальний реєстр
+   `register(key, factory)` / `get<T>(key)` у `shared/api`, а реєстрація сервісів — у
+   `app/providers/services.ts`.
+10. **Pinia проти composable зі спільним `ref`.** Pinia дає єдине зареєстроване сховище з ідентифікатором,
+    підтримкою Devtools (історія змін), плагінів (persistedstate), `$reset`/`$subscribe`, керованим
+    життєвим циклом та простою взаємодією зі сторами поза компонентами (guard). Composable зі спільним
+    `ref` теж працює, але все це доведеться писати вручну.
+11. **Options stores і setup stores; `storeToRefs`.** Options store описується об'єктом
+    (`state`, `getters`, `actions`), setup store — функцією у стилі Composition API (`ref` =
+    state, `computed` = getters, функції = actions). `storeToRefs(store)` перетворює state та getters
+    на `ref`-и, зберігаючи реактивність при деструктуризації.
+12. **Чому не деструктуризувати state без `storeToRefs`?** При прямій деструктуризації
+    (`const { users } = store`) ми отримуємо звичайне значення в момент виклику, і воно перестає
+    оновлюватись. `storeToRefs` повертає `ref`-и, які лишаються реактивними (actions можна
+    деструктуризувати напряму, бо це функції).
+13. **Чому не звертатися до сервісів з компонентів?** Тоді логіка завантаження, обробки помилок і
+    оновлення стану розкидається по компонентах і дублюється. Стор централізує стан
+    (`isLoading`, `error`, дані), тож усі компоненти бачать однакові дані, а компоненти залишаються
+    тонкими й тестованими.
+14. **Навіщо обгортки UI-компонентів у `shared/ui`?** Залежність від бібліотеки зосереджена в одному
+    шарі: заміна PrimeVue на іншу бібліотеку зачіпає лише `shared/ui`. Також обгортки задають
+    єдиний API (наприклад, `AppInput` одразу показує помилку валідації) й спрощують використання.
+15. **Tree-shaking і як підключати лише потрібні компоненти.** Tree-shaking — видалення
+    невикористаного коду зі збірки. Для UI-бібліотеки імпортуємо окремі компоненти
+    (`import Button from 'primevue/button'`) або використовуємо auto-import, а не реєструємо всю
+    бібліотеку глобально.
+16. **Переваги й недоліки FSD для невеликого застосунку.** Переваги: передбачувана структура,
+    чіткі залежності, легко масштабувати й працювати командою, лінтер захищає архітектуру.
+    Недоліки: багато папок і `index.ts`-файлів для невеликого обсягу коду, вищий поріг входу,
+    спокуса «перероздрібнити» слайси (для `vue-lottery-app` це певною мірою надлишково).
