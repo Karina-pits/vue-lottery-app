@@ -1,6 +1,5 @@
-import { http } from '@/shared/api/http-client';
-import type { LoginRequest, LoginResponse, RefreshResponse } from '@/entities/session/model/types';
-import type { User } from '@/entities/user/model/types';
+import { http } from '@/shared/api';
+import type { AuthUser, LoginRequest, LoginResponse, RefreshResponse } from '../model/types';
 
 const TOKEN_LIFETIME_MINUTES = 30;
 
@@ -17,8 +16,8 @@ export class AuthService {
   }
 
   /** Поточний користувач (захищений ендпоїнт — потрібен Bearer-токен). */
-  me(): Promise<User> {
-    return http<User>('/auth/me', { auth: true });
+  me(): Promise<AuthUser> {
+    return http<AuthUser>('/auth/me', { auth: true });
   }
 
   refresh(refreshToken: string): Promise<RefreshResponse> {

@@ -1,10 +1,13 @@
 import { createPinia } from 'pinia';
 import { createApp } from 'vue';
-import { configureAuthHandlers } from '@/shared/api/http-client';
+import { configureAuthHandlers } from '@/shared/api';
+import { registerServices } from '@/app/providers/services';
 import { router } from '@/app/providers/router';
 import { useAuthStore } from '@/entities/session/model/auth.store';
 import '@/app/styles/main.scss';
 import App from './App.vue';
+
+registerServices();
 
 const app = createApp(App);
 app.use(createPinia());

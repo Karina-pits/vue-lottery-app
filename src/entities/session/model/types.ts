@@ -1,5 +1,3 @@
-import type { User } from '@/entities/user/model/types';
-
 export interface LoginRequest {
   username: string;
   password: string;
@@ -7,11 +5,16 @@ export interface LoginRequest {
   expiresInMins?: number;
 }
 
-/** Дані користувача, які ми зберігаємо після логіну. */
-export type AuthUser = Pick<
-  User,
-  'id' | 'username' | 'email' | 'firstName' | 'lastName' | 'gender' | 'image'
->;
+/** Дані поточного користувача, які ми зберігаємо в сесії. */
+export interface AuthUser {
+  id: number;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  image: string;
+}
 
 export interface LoginResponse extends AuthUser {
   accessToken: string;

@@ -1,7 +1,7 @@
 import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
-import { HttpError } from '@/shared/api/http-client';
-import { ServiceProvider } from '@/shared/api/service-provider';
+import { HttpError, ServiceProvider } from '@/shared/api';
+import type { AuthService } from '../api/auth.service';
 import type { AuthUser, LoginRequest } from './types';
 
 const STORAGE_KEY = 'vue-lottery-auth';
@@ -25,6 +25,7 @@ function loadStoredAuth(): StoredAuth | null {
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  const authService = () => ServiceProvider.get<AuthService>('auth');
   const stored = loadStoredAuth();
 
   const user = ref<AuthUser | null>(stored?.user ?? null);
@@ -66,7 +67,7 @@ export const useAuthStore = defineStore('auth', () => {
         accessToken: access,
         refreshToken: refresh,
         ...profile
-      } = await ServiceProvider.auth.login(credentials);
+      } = await authService().login(credentials);
       user.value = profile;
       accessToken.value = access;
       refreshToken.value = refresh;
@@ -92,7 +93,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (!refreshToken.value) {
       return Promise.resolve(null);
     }
-    refreshPromise ??= ServiceProvider.auth
+    refreshPromise ??= authService()
       .refresh(refreshToken.value)
       .then((tokens) => {
         accessToken.value = tokens.accessToken;
@@ -116,7 +117,7 @@ export const useAuthStore = defineStore('auth', () => {
       return;
     }
     try {
-      await ServiceProvider.auth.me();
+      await authService().me();
     } catch (e) {
       // 401 після невдалого refresh — сесія недійсна; мережеві збої сесію не скидають.
       if (e instanceof HttpError && e.status === 401) {

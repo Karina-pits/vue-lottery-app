@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import { ServiceProvider } from '@/shared/api/service-provider';
+import { ServiceProvider } from '@/shared/api';
+import type { UserService } from '../api/user.service';
 import type { CreateUserDto, UpdateUserDto, User } from './types';
 import { useWinnersStore } from '@/features/pick-winner/model/winners.store';
 
@@ -15,6 +16,7 @@ const SERVER_USERS_COUNT = 208;
  * між сторінками.
  */
 export const useUsersStore = defineStore('users', () => {
+  const userService = () => ServiceProvider.get<UserService>('users');
   const users = ref<User[]>([]);
   const total = ref(0);
   const isLoading = ref(false);
@@ -41,8 +43,8 @@ export const useUsersStore = defineStore('users', () => {
     try {
       const params = { limit: PAGE_SIZE, skip: (page - 1) * PAGE_SIZE };
       const result = query
-        ? await ServiceProvider.users.search(query, params)
-        : await ServiceProvider.users.getAll(params);
+        ? await userService().search(query, params)
+        : await userService().getAll(params);
 
       let items = applyLocalChanges(result.items);
       let totalCount = result.total;
@@ -83,7 +85,7 @@ export const useUsersStore = defineStore('users', () => {
     isUserLoading.value = true;
     currentUser.value = null;
     try {
-      currentUser.value = await ServiceProvider.users.getById(id);
+      currentUser.value = await userService().getById(id);
     } catch (e) {
       userError.value = (e as Error).message;
     } finally {
@@ -92,7 +94,7 @@ export const useUsersStore = defineStore('users', () => {
   }
 
   async function createUser(data: CreateUserDto): Promise<User> {
-    const created = await ServiceProvider.users.create(data);
+    const created = await userService().create(data);
     // Сервер завжди повертає той самий id — видаємо унікальний локальний id.
     const maxId = Math.max(SERVER_USERS_COUNT, ...createdUsers.value.map((u) => u.id));
     const user: User = { ...created, id: maxId + 1 };
@@ -104,7 +106,7 @@ export const useUsersStore = defineStore('users', () => {
 
   async function updateUser(id: number, data: UpdateUserDto): Promise<User> {
     const base = findLocalUser(id) ?? currentUser.value;
-    const updated = await ServiceProvider.users.update(id, data);
+    const updated = await userService().update(id, data);
     const merged: User = { ...(base ?? updated), ...updated, id };
 
     if (createdUsers.value.some((u) => u.id === id)) {
@@ -119,7 +121,7 @@ export const useUsersStore = defineStore('users', () => {
   }
 
   async function deleteUser(id: number): Promise<void> {
-    await ServiceProvider.users.delete(id);
+    await userService().delete(id);
     createdUsers.value = createdUsers.value.filter((u) => u.id !== id);
     if (!removedIds.value.includes(id)) {
       removedIds.value.push(id);
