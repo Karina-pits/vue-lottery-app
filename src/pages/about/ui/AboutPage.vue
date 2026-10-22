@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { AUTHOR } from '@/shared/config/author';
+import { AUTHOR } from '@/shared/config';
 </script>
 
 <template>
   <section class="card-block">
     <h1 class="page-title">About author</h1>
-    <p class="mb-1"><strong>ПІБ:</strong> {{ AUTHOR.fullName }}</p>
+    <p><strong>ПІБ:</strong> {{ AUTHOR.fullName }}</p>
     <p>
       <strong>GitHub:</strong>
       <a :href="AUTHOR.githubUrl" target="_blank" rel="noopener noreferrer">
@@ -14,8 +14,8 @@ import { AUTHOR } from '@/shared/config/author';
     </p>
 
     <h2 class="section-title">Technical skills</h2>
-    <div v-for="skill in AUTHOR.skills" :key="skill.group" class="mb-2">
+    <p v-for="skill in AUTHOR.skills" :key="skill.group">
       <strong>{{ skill.group }}:</strong> {{ skill.items.join(', ') }}
-    </div>
+    </p>
   </section>
 </template>

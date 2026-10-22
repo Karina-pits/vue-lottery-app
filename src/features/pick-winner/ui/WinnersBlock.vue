@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { User } from '@/entities/user/model/types';
-import BaseButton from '@/shared/ui/BaseButton.vue';
+import type { User } from '@/entities/user';
+import { AppButton } from '@/shared/ui';
 import WinnerBadge from './WinnerBadge.vue';
 
 defineProps<{
@@ -25,6 +25,6 @@ const emit = defineEmits<{
       />
       <span v-if="winners.length === 0" class="winners-bar__placeholder">Winners</span>
     </div>
-    <BaseButton :disabled="!canPickWinner" @click="emit('pick-winner')">New winner</BaseButton>
+    <AppButton label="New winner" :disabled="!canPickWinner" @click="emit('pick-winner')" />
   </div>
 </template>

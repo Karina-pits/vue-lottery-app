@@ -1,24 +1,25 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia';
 import { computed, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import BaseAlert from '@/shared/ui/BaseAlert.vue';
-import BaseSpinner from '@/shared/ui/BaseSpinner.vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useUsersStore } from '@/entities/user/model/users.store';
+import { AppButton, AppMessage, AppSpinner } from '@/shared/ui';
 
 // id приходить як prop завдяки `props: true` у конфігурації маршруту
 const props = defineProps<{ id: string }>();
 
 const route = useRoute();
+const router = useRouter();
 const usersStore = useUsersStore();
 const { currentUser, isUserLoading, userError } = storeToRefs(usersStore);
+const { fetchUser } = usersStore;
 
 const userId = computed(() => Number(props.id));
 
 watch(
   userId,
   () => {
-    void usersStore.fetchUser(userId.value);
+    void fetchUser(userId.value);
   },
   { immediate: true },
 );
@@ -26,9 +27,9 @@ watch(
 
 <template>
   <div class="page-stack">
-    <BaseSpinner v-if="isUserLoading" />
+    <AppSpinner v-if="isUserLoading" />
     <template v-else>
-      <BaseAlert v-if="userError">{{ userError }}</BaseAlert>
+      <AppMessage v-if="userError">{{ userError }}</AppMessage>
 
       <section v-if="currentUser" class="card-block">
         <h1 class="page-title">{{ currentUser.firstName }} {{ currentUser.lastName }}</h1>
@@ -67,14 +68,12 @@ watch(
         </dl>
 
         <div class="form-block__actions">
-          <RouterLink class="btn btn-secondary" :to="{ name: 'users' }">Back to users</RouterLink>
-          <RouterLink
+          <AppButton label="Back to users" severity="secondary" @click="router.push({ name: 'users' })" />
+          <AppButton
             v-if="route.name !== 'user-edit'"
-            class="btn btn-primary"
-            :to="{ name: 'user-edit', params: { id } }"
-          >
-            Edit
-          </RouterLink>
+            label="Edit"
+            @click="router.push({ name: 'user-edit', params: { id } })"
+          />
         </div>
       </section>
 

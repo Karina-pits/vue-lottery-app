@@ -1,14 +1,8 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
 import { useSessionStore } from '@/entities/session';
+import { LogoutButton } from '@/features/auth';
 
-const auth = useSessionStore();
-const router = useRouter();
-
-async function handleLogout(): Promise<void> {
-  auth.logout();
-  await router.push({ name: 'login' });
-}
+const session = useSessionStore();
 </script>
 
 <template>
@@ -22,9 +16,7 @@ async function handleLogout(): Promise<void> {
     <RouterLink class="app-nav__link" active-class="is-active" :to="{ name: 'users' }">
       Users
     </RouterLink>
-    <button v-if="auth.isAuthenticated" type="button" class="app-nav__link" @click="handleLogout">
-      Logout
-    </button>
+    <LogoutButton v-if="session.isAuthenticated" />
     <RouterLink v-else class="app-nav__link" active-class="is-active" :to="{ name: 'login' }">
       Login
     </RouterLink>

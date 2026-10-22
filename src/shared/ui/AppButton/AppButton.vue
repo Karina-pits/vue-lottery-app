@@ -3,7 +3,9 @@ import Button from 'primevue/button';
 
 withDefaults(
   defineProps<{
-    label: string;
+    label?: string;
+    icon?: string;
+    ariaLabel?: string;
     type?: 'button' | 'submit';
     severity?: 'secondary' | 'danger' | 'success' | 'contrast';
     size?: 'small' | 'large';
@@ -12,6 +14,9 @@ withDefaults(
     text?: boolean;
   }>(),
   {
+    label: undefined,
+    icon: undefined,
+    ariaLabel: undefined,
     type: 'button',
     severity: undefined,
     size: undefined,
@@ -27,6 +32,8 @@ defineEmits<{ click: [event: MouseEvent] }>();
 <template>
   <Button
     :label="label"
+    :icon="icon"
+    :aria-label="ariaLabel"
     :type="type"
     :severity="severity"
     :size="size"

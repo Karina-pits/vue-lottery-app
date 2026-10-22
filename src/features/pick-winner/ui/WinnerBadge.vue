@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { User } from '@/entities/user/model/types';
+import type { User } from '@/entities/user';
 
 defineProps<{
   winner: User;
@@ -19,7 +19,7 @@ const emit = defineEmits<{
       :aria-label="`Прибрати ${winner.firstName} ${winner.lastName} зі списку переможців`"
       @click="emit('remove', winner.id)"
     >
-      ✕
+      <i class="pi pi-times" aria-hidden="true"></i>
     </button>
   </span>
 </template>

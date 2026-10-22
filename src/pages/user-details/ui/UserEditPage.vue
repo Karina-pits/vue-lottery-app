@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import UserForm, { type UserFormValues } from '@/features/user-form/ui/UserForm.vue';
 import { useUsersStore } from '@/entities/user/model/users.store';
 import type { CreateUserDto, User } from '@/entities/user/model/types';
+import { UserForm } from '@/features/user-form';
+import type { UserFormValues } from '@/features/user-form';
+import { useAppToast } from '@/shared/ui';
 
-// id — з параметра маршруту (props: true), user передає батьківський UserDetailsView
+// id — з параметра маршруту (props: true), user передає батьківська сторінка
 const props = defineProps<{ id: string; user: User }>();
 
 const router = useRouter();
-const usersStore = useUsersStore();
+const toast = useAppToast();
+const { updateUser } = useUsersStore();
 
 const isSaving = ref(false);
 const saveError = ref<string | null>(null);
@@ -33,10 +36,12 @@ async function handleSubmit(dto: CreateUserDto): Promise<void> {
   isSaving.value = true;
   saveError.value = null;
   try {
-    await usersStore.updateUser(props.user.id, dto);
+    await updateUser(props.user.id, dto);
+    toast.success('Користувача оновлено');
     goToDetails();
   } catch (e) {
     saveError.value = (e as Error).message;
+    toast.error('Не вдалося оновити користувача', saveError.value);
   } finally {
     isSaving.value = false;
   }

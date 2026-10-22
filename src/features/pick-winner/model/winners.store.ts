@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { defineStore } from 'pinia';
-import type { User } from '@/entities/user/model/types';
+import type { User } from '@/entities/user';
 
 export const MAX_WINNERS = 3;
 

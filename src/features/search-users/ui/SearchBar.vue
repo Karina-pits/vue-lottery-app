@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, ref, watch } from 'vue';
+import { AppInput } from '@/shared/ui';
 
 const props = withDefaults(defineProps<{ modelValue?: string }>(), { modelValue: '' });
 
@@ -33,11 +34,12 @@ onBeforeUnmount(() => clearTimeout(debounceTimer));
 </script>
 
 <template>
-  <input
-    v-model="query"
-    type="search"
-    class="form-control"
-    placeholder="Search by name…"
-    aria-label="Пошук користувачів за іменем"
-  />
+  <div class="search-bar">
+    <AppInput
+      v-model="query"
+      type="search"
+      placeholder="Search by name…"
+      aria-label="Пошук користувачів за іменем"
+    />
+  </div>
 </template>

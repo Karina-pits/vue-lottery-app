@@ -2,11 +2,8 @@
 import { toTypedSchema } from '@vee-validate/yup';
 import { useForm } from 'vee-validate';
 import * as yup from 'yup';
-import type { CreateUserDto } from '@/entities/user/model/types';
-import BaseAlert from '@/shared/ui/BaseAlert.vue';
-import BaseButton from '@/shared/ui/BaseButton.vue';
-import BaseInput from '@/shared/ui/BaseInput.vue';
-import BaseSelect from '@/shared/ui/BaseSelect.vue';
+import type { CreateUserDto } from '@/entities/user';
+import { AppButton, AppInput, AppMessage, AppSelect } from '@/shared/ui';
 
 /** Значення полів форми (усі як рядки, як у <input>). */
 export interface UserFormValues {
@@ -97,28 +94,24 @@ const onSubmit = handleSubmit((values) => {
 
 <template>
   <form novalidate @submit.prevent="onSubmit">
-    <div class="row g-3">
-      <div class="col-md-6">
-        <BaseInput
-          v-model="firstName"
-          label="First name"
-          placeholder="Enter first name"
-          :error="errors.firstName"
-          @blur="validateField('firstName')"
-        />
-      </div>
-      <div class="col-md-6">
-        <BaseInput
-          v-model="lastName"
-          label="Last name"
-          placeholder="Enter last name"
-          :error="errors.lastName"
-          @blur="validateField('lastName')"
-        />
-      </div>
+    <div class="form-grid form-grid--2">
+      <AppInput
+        v-model="firstName"
+        label="First name"
+        placeholder="Enter first name"
+        :error="errors.firstName"
+        @blur="validateField('firstName')"
+      />
+      <AppInput
+        v-model="lastName"
+        label="Last name"
+        placeholder="Enter last name"
+        :error="errors.lastName"
+        @blur="validateField('lastName')"
+      />
     </div>
 
-    <BaseInput
+    <AppInput
       v-model="email"
       label="Email"
       type="email"
@@ -127,68 +120,56 @@ const onSubmit = handleSubmit((values) => {
       @blur="validateField('email')"
     />
 
-    <div class="row g-3">
-      <div class="col-md-6">
-        <BaseInput
-          v-model="username"
-          label="Username"
-          placeholder="Enter username"
-          :error="errors.username"
-          @blur="validateField('username')"
-        />
-      </div>
-      <div class="col-md-6">
-        <BaseInput
-          v-model="password"
-          label="Password"
-          type="password"
-          placeholder="Enter password"
-          autocomplete="new-password"
-          :error="errors.password"
-          @blur="validateField('password')"
-        />
-      </div>
+    <div class="form-grid form-grid--2">
+      <AppInput
+        v-model="username"
+        label="Username"
+        placeholder="Enter username"
+        :error="errors.username"
+        @blur="validateField('username')"
+      />
+      <AppInput
+        v-model="password"
+        label="Password"
+        type="password"
+        placeholder="Enter password"
+        autocomplete="new-password"
+        :error="errors.password"
+        @blur="validateField('password')"
+      />
     </div>
 
-    <div class="row g-3">
-      <div class="col-md-4">
-        <BaseInput
-          v-model="age"
-          label="Age"
-          type="number"
-          placeholder="Enter age"
-          :error="errors.age"
-          @blur="validateField('age')"
-        />
-      </div>
-      <div class="col-md-4">
-        <BaseSelect
-          v-model="gender"
-          label="Gender"
-          :options="genderOptions"
-          :error="errors.gender"
-          @blur="validateField('gender')"
-        />
-      </div>
-      <div class="col-md-4">
-        <BaseInput
-          v-model="phone"
-          label="Phone number"
-          type="tel"
-          placeholder="+1 234 567 8900"
-          :error="errors.phone"
-          @blur="validateField('phone')"
-        />
-      </div>
+    <div class="form-grid form-grid--3">
+      <AppInput
+        v-model="age"
+        label="Age"
+        type="number"
+        placeholder="Enter age"
+        :error="errors.age"
+        @blur="validateField('age')"
+      />
+      <AppSelect
+        v-model="gender"
+        label="Gender"
+        :options="genderOptions"
+        :error="errors.gender"
+        @blur="validateField('gender')"
+      />
+      <AppInput
+        v-model="phone"
+        label="Phone number"
+        type="tel"
+        placeholder="+1 234 567 8900"
+        :error="errors.phone"
+        @blur="validateField('phone')"
+      />
     </div>
 
-    <BaseAlert v-if="submitError">{{ submitError }}</BaseAlert>
+    <AppMessage v-if="submitError">{{ submitError }}</AppMessage>
 
     <div class="form-block__actions">
-      <BaseButton variant="secondary" @click="emit('cancel')">Cancel</BaseButton>
-      <BaseButton type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? 'Saving…' : submitLabel }}
-      </BaseButton>
+      <AppButton label="Cancel" severity="secondary" @click="emit('cancel')" />
+      <AppButton type="submit" :loading="isSubmitting" :label="isSubmitting ? 'Saving…' : submitLabel" />
     </div>
   </form>
 </template>

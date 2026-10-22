@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { PROJECT } from '@/shared/config/author';
+import { PROJECT } from '@/shared/config';
 
 const technologies = [
   'Vue 3 (Composition API, <script setup>) + TypeScript',
+  'Feature-Sliced Design: шари app / pages / widgets / features / entities / shared',
   'Vue Router — маршрутизація, guards, вкладені маршрути, layouts',
-  'Pinia — стан застосунку (auth, users, winners)',
+  'Pinia (setup stores) — стан застосунку: session, users, settings',
   'Патерн Repository + HTTP-клієнт (fetch) з interceptor для оновлення JWT',
+  'PrimeVue (обгортки в shared/ui) + SCSS, світла/темна тема',
   'VeeValidate + yup — валідація форм',
-  'Bootstrap 5 (SCSS, лише потрібні партиали) + Bootstrap Icons',
-  'Vite, ESLint, Prettier',
+  'ESLint + eslint-plugin-boundaries — перевірка правил FSD',
   'DummyJSON — тестовий REST API (Users, Auth)',
 ];
 </script>
@@ -30,7 +31,7 @@ const technologies = [
     <h2 class="section-title">Код проєкту</h2>
     <p>
       <a :href="PROJECT.githubUrl" target="_blank" rel="noopener noreferrer">
-        <i class="bi bi-github"></i> {{ PROJECT.githubUrl }}
+        <i class="pi pi-github"></i> {{ PROJECT.githubUrl }}
       </a>
     </p>
   </section>

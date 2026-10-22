@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import AuthLayout from '@/app/layouts/AuthLayout.vue';
 import DefaultLayout from '@/app/layouts/DefaultLayout.vue';
+import { AppToast } from '@/shared/ui';
 
 const route = useRoute();
 
@@ -16,4 +17,5 @@ const layout = computed(() => layouts[route.meta.layout ?? 'default']);
   <component :is="layout">
     <RouterView />
   </component>
+  <AppToast />
 </template>
