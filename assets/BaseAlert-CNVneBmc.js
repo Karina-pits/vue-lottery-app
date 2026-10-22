@@ -1,1 +1,0 @@
-import{S as e,T as t,lt as n,m as r,u as i}from"./runtime-core.esm-bundler-FvMCAmKI.js";var a=r({__name:`BaseAlert`,props:{variant:{default:`danger`}},setup(r){return(a,o)=>(e(),i(`div`,{class:n([`alert`,`alert-${r.variant}`]),role:`alert`},[t(a.$slots,`default`)],2))}});export{a as t};
