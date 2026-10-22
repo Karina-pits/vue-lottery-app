@@ -2,6 +2,7 @@ import { createApp } from 'vue';
 import { configureAuthHandlers } from '@/shared/api';
 import { registerServices } from '@/app/providers/services';
 import { createAppPinia } from '@/app/providers/store';
+import { installUi } from '@/app/providers/ui';
 import { router } from '@/app/providers/router';
 import { useSessionStore } from '@/entities/session';
 import '@/app/styles/main.scss';
@@ -11,6 +12,7 @@ registerServices();
 
 const app = createApp(App);
 app.use(createAppPinia());
+installUi(app);
 app.use(router);
 
 // HTTP-клієнт не знає про Pinia — підключаємо йому обробники авторизації
