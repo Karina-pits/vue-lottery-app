@@ -1,9 +1,8 @@
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { ServiceProvider } from '@/shared/api';
 import type { UserService } from '../api/user.service';
 import type { CreateUserDto, UpdateUserDto, User } from './types';
-import { useWinnersStore } from '@/features/pick-winner/model/winners.store';
 
 export const PAGE_SIZE = 10;
 // У DummyJSON 208 користувачів — нові локальні id починаємо після них.
@@ -19,6 +18,7 @@ export const useUsersStore = defineStore('users', () => {
   const userService = () => ServiceProvider.get<UserService>('users');
   const users = ref<User[]>([]);
   const total = ref(0);
+  const hasUsers = computed(() => users.value.length > 0);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -75,7 +75,7 @@ export const useUsersStore = defineStore('users', () => {
     );
   }
 
-  async function loadUser(id: number): Promise<void> {
+  async function fetchUser(id: number): Promise<void> {
     userError.value = null;
     const local = findLocalUser(id);
     if (local) {
@@ -120,14 +120,13 @@ export const useUsersStore = defineStore('users', () => {
     return merged;
   }
 
-  async function deleteUser(id: number): Promise<void> {
+  async function removeUser(id: number): Promise<void> {
     await userService().delete(id);
     createdUsers.value = createdUsers.value.filter((u) => u.id !== id);
     if (!removedIds.value.includes(id)) {
       removedIds.value.push(id);
     }
     delete editedUsers.value[id];
-    useWinnersStore().removeWinner(id); // видалений користувач зникає і з блоку переможців
     users.value = users.value.filter((u) => u.id !== id);
     total.value = Math.max(0, total.value - 1);
     if (currentUser.value?.id === id) {
@@ -138,15 +137,16 @@ export const useUsersStore = defineStore('users', () => {
   return {
     users,
     total,
+    hasUsers,
     isLoading,
     error,
     currentUser,
     isUserLoading,
     userError,
     fetchUsers,
-    loadUser,
+    fetchUser,
     createUser,
     updateUser,
-    deleteUser,
+    removeUser,
   };
 });

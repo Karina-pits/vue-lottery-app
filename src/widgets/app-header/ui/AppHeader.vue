@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/entities/session/model/auth.store';
+import { useSessionStore } from '@/entities/session';
 import AppNavigation from './AppNavigation.vue';
 import Logo from './Logo.vue';
 
-const auth = useAuthStore();
+const auth = useSessionStore();
 </script>
 
 <template>

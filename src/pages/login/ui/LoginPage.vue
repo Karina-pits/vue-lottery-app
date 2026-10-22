@@ -6,9 +6,9 @@ import * as yup from 'yup';
 import BaseAlert from '@/shared/ui/BaseAlert.vue';
 import BaseButton from '@/shared/ui/BaseButton.vue';
 import BaseInput from '@/shared/ui/BaseInput.vue';
-import { useAuthStore } from '@/entities/session/model/auth.store';
+import { useSessionStore } from '@/entities/session';
 
-const auth = useAuthStore();
+const auth = useSessionStore();
 const route = useRoute();
 const router = useRouter();
 

@@ -1,32 +1,37 @@
-import { computed, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { HttpError, ServiceProvider } from '@/shared/api';
 import type { AuthService } from '../api/auth.service';
 import type { AuthUser, LoginRequest } from './types';
 
-const STORAGE_KEY = 'vue-lottery-auth';
+const STORAGE_KEY = 'vue-lottery-session';
 
-interface StoredAuth {
+interface SessionPayload {
   user: AuthUser;
   accessToken: string;
   refreshToken: string;
 }
 
-function loadStoredAuth(): StoredAuth | null {
+function loadSession(): SessionPayload | null {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) {
     return null;
   }
   try {
-    return JSON.parse(raw) as StoredAuth;
+    return JSON.parse(raw) as SessionPayload;
   } catch {
     return null;
   }
 }
 
-export const useAuthStore = defineStore('auth', () => {
+/**
+ * Сесія користувача: токени та дані поточного користувача.
+ * Збереження в localStorage реалізоване вручну (setSession / clearSession),
+ * на відміну від settings-стору, який використовує pinia-plugin-persistedstate.
+ */
+export const useSessionStore = defineStore('session', () => {
   const authService = () => ServiceProvider.get<AuthService>('auth');
-  const stored = loadStoredAuth();
+  const stored = loadSession();
 
   const user = ref<AuthUser | null>(stored?.user ?? null);
   const accessToken = ref<string | null>(stored?.accessToken ?? null);
@@ -36,28 +41,35 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null);
   const isSessionChecked = ref(false);
 
-  const isAuthenticated = computed(() => Boolean(accessToken.value && user.value));
+  const isAuthenticated = computed(() => accessToken.value !== null && user.value !== null);
   const fullName = computed(() =>
     user.value ? `${user.value.firstName} ${user.value.lastName}` : '',
   );
 
-  // Токени та дані користувача зберігаються в localStorage при кожній зміні.
-  watch(
-    [user, accessToken, refreshToken],
-    () => {
-      if (user.value && accessToken.value && refreshToken.value) {
-        const payload: StoredAuth = {
-          user: user.value,
-          accessToken: accessToken.value,
-          refreshToken: refreshToken.value,
-        };
-        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      } else {
-        window.localStorage.removeItem(STORAGE_KEY);
-      }
-    },
-    { deep: true },
-  );
+  function persist(): void {
+    if (user.value && accessToken.value && refreshToken.value) {
+      const payload: SessionPayload = {
+        user: user.value,
+        accessToken: accessToken.value,
+        refreshToken: refreshToken.value,
+      };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+  }
+
+  function setSession(payload: SessionPayload): void {
+    user.value = payload.user;
+    accessToken.value = payload.accessToken;
+    refreshToken.value = payload.refreshToken;
+    persist();
+  }
+
+  function clearSession(): void {
+    user.value = null;
+    accessToken.value = null;
+    refreshToken.value = null;
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
 
   async function login(credentials: LoginRequest): Promise<void> {
     isLoading.value = true;
@@ -68,9 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
         refreshToken: refresh,
         ...profile
       } = await authService().login(credentials);
-      user.value = profile;
-      accessToken.value = access;
-      refreshToken.value = refresh;
+      setSession({ user: profile, accessToken: access, refreshToken: refresh });
     } catch (e) {
       error.value = (e as Error).message;
       throw e;
@@ -80,9 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function logout(): void {
-    user.value = null;
-    accessToken.value = null;
-    refreshToken.value = null;
+    clearSession();
     error.value = null;
   }
 
@@ -98,6 +106,7 @@ export const useAuthStore = defineStore('auth', () => {
       .then((tokens) => {
         accessToken.value = tokens.accessToken;
         refreshToken.value = tokens.refreshToken;
+        persist();
         return tokens.accessToken;
       })
       .catch(() => null)
@@ -134,6 +143,8 @@ export const useAuthStore = defineStore('auth', () => {
     error,
     isAuthenticated,
     fullName,
+    setSession,
+    clearSession,
     login,
     logout,
     refreshAccessToken,

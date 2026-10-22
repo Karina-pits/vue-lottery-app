@@ -91,7 +91,8 @@ async function confirmDelete(id: number): Promise<void> {
   isDeleting.value = true;
   deleteError.value = null;
   try {
-    await usersStore.deleteUser(id);
+    await usersStore.removeUser(id);
+    winnersStore.removeWinner(id); // видалений користувач зникає і з блоку переможців
     userToDelete.value = null;
   } catch (e) {
     deleteError.value = (e as Error).message;

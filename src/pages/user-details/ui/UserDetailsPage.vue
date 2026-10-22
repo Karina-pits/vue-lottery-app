@@ -18,7 +18,7 @@ const userId = computed(() => Number(props.id));
 watch(
   userId,
   () => {
-    void usersStore.loadUser(userId.value);
+    void usersStore.fetchUser(userId.value);
   },
   { immediate: true },
 );

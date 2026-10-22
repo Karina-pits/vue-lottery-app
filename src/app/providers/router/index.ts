@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/entities/session/model/auth.store';
+import { useSessionStore } from '@/entities/session';
 
 declare module 'vue-router' {
   interface RouteMeta {
@@ -77,7 +77,7 @@ export const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-  const auth = useAuthStore();
+  const auth = useSessionStore();
   await auth.initSession();
 
   if (to.matched.some((record) => record.meta.requiresAuth) && !auth.isAuthenticated) {
